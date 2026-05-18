@@ -11,9 +11,10 @@ interface FilterBarProps {
   setSelectedMonth: (m: number | null) => void
   isMobile: boolean
   uploadStatus: UploadStatus
+  allowAll?: boolean
 }
 
-export default function FilterBar({ fy, setFy, selectedMonth, setSelectedMonth, isMobile, uploadStatus }: FilterBarProps) {
+export default function FilterBar({ fy, setFy, selectedMonth, setSelectedMonth, isMobile, uploadStatus, allowAll = false }: FilterBarProps) {
   const [fyOpen, setFyOpen] = useState(false)
   const fyRef   = useRef<HTMLDivElement>(null)
   const pillRef = useRef<HTMLDivElement>(null)
@@ -81,18 +82,19 @@ export default function FilterBar({ fy, setFy, selectedMonth, setSelectedMonth, 
             >All</button>
 
             {MONTHS.map(m => {
-              const isActive = selectedMonth === m.idx
-              const full     = hasData(m.idx)
-              const partial  = !full && (hasPL(m.idx) || hasBS(m.idx))
-              const missing  = !full && !partial
-              const dotColor = full ? ACCENT : partial ? ACCENT3 : 'transparent'
+              const isActive   = selectedMonth === m.idx
+              const full       = hasData(m.idx)
+              const partial    = !full && (hasPL(m.idx) || hasBS(m.idx))
+              const missing    = !full && !partial
+              const clickable  = allowAll || !missing
+              const dotColor   = full ? ACCENT : partial ? ACCENT3 : 'transparent'
               return (
                 <button
                   key={m.idx}
                   className={isActive ? 'pill-active' : ''}
-                  onClick={() => !missing && setSelectedMonth(isActive ? null : m.idx)}
-                  title={missing ? `${m.full} — no data uploaded` : partial ? `${m.full} — partial (${hasPL(m.idx) ? 'P&L' : ''}${hasPL(m.idx) && hasBS(m.idx) ? '+' : ''}${hasBS(m.idx) ? 'B/S' : ''} only)` : m.full}
-                  style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5, background: isActive ? ACCENT : missing ? 'transparent' : 'rgba(0,229,160,0.05)', color: isActive ? '#000' : missing ? '#2a2d3a' : '#9ca3af', border: `1px solid ${isActive ? ACCENT : missing ? '#1e2130' : partial ? ACCENT3 : '#2a2d3a'}`, borderStyle: missing ? 'dashed' : 'solid', borderRadius: 6, padding: '0 10px', height: 28, fontSize: 11, fontFamily: "'DM Mono',monospace", cursor: missing ? 'not-allowed' : 'pointer', fontWeight: isActive ? 600 : 400, transition: 'background 0.15s ease, color 0.15s ease, border-color 0.15s ease', opacity: missing ? 0.35 : 1, whiteSpace: 'nowrap' }}
+                  onClick={() => clickable && setSelectedMonth(isActive ? null : m.idx)}
+                  title={missing && !allowAll ? `${m.full} — no data uploaded` : partial ? `${m.full} — partial (${hasPL(m.idx) ? 'P&L' : ''}${hasPL(m.idx) && hasBS(m.idx) ? '+' : ''}${hasBS(m.idx) ? 'B/S' : ''} only)` : m.full}
+                  style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5, background: isActive ? ACCENT : missing ? 'transparent' : 'rgba(0,229,160,0.05)', color: isActive ? '#000' : missing ? (allowAll ? '#6b7280' : '#2a2d3a') : '#9ca3af', border: `1px solid ${isActive ? ACCENT : missing ? (allowAll ? '#2a2d3a' : '#1e2130') : partial ? ACCENT3 : '#2a2d3a'}`, borderStyle: missing && !allowAll ? 'dashed' : 'solid', borderRadius: 6, padding: '0 10px', height: 28, fontSize: 11, fontFamily: "'DM Mono',monospace", cursor: clickable ? 'pointer' : 'not-allowed', fontWeight: isActive ? 600 : 400, transition: 'background 0.15s ease, color 0.15s ease, border-color 0.15s ease', opacity: missing && !allowAll ? 0.35 : 1, whiteSpace: 'nowrap' }}
                 >
                   <span style={{ width: 5, height: 5, borderRadius: '50%', background: isActive ? 'rgba(0,0,0,0.3)' : dotColor, flexShrink: 0, transition: 'background 0.15s ease' }} />
                   {m.short}

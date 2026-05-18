@@ -243,7 +243,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        <FilterBar fy={fy} setFy={handleFyChange} selectedMonth={selectedMonth} setSelectedMonth={setSelectedMonth} isMobile={isMobile} uploadStatus={uploadStatus} />
+        <FilterBar fy={fy} setFy={handleFyChange} selectedMonth={selectedMonth} setSelectedMonth={setSelectedMonth} isMobile={isMobile} uploadStatus={uploadStatus} allowAll={active === 'upload'} />
 
         <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '18px 14px 88px' : '28px 36px' }}>
           {loading ? (
