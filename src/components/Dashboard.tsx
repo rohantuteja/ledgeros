@@ -146,18 +146,21 @@ export default function Dashboard() {
   const bsData = useMemo<BSChartRow[]>(() =>
     MONTHS.map(m => {
       const row       = rawBS.find(d => d.month_index === m.idx)
-      const cash      = row?.cash_and_bank ?? 0
-      const debtors   = row?.debtors       ?? 0
-      const inventory = row?.inventory     ?? 0
-      const fixedAssets = row?.fixed_assets?? 0
-      const creditors = row?.creditors     ?? 0
-      const loans     = (row?.secured_loans ?? 0) + (row?.unsecured_loans ?? 0)
-      const equity    = (row?.share_capital ?? 0) + (row?.reserves ?? 0) + (row?.profit_and_loss ?? 0)
+      const cash        = row?.cash_and_bank          ?? 0
+      const debtors     = row?.debtors                ?? 0
+      const inventory   = row?.inventory              ?? 0
+      const fixedAssets = row?.fixed_assets           ?? 0
+      const investments = row?.investments            ?? 0
+      const otherCA     = row?.other_current_assets   ?? 0
+      const creditors   = row?.creditors              ?? 0
+      const otherCL     = row?.other_current_liabilities ?? 0
+      const loans       = (row?.secured_loans ?? 0) + (row?.unsecured_loans ?? 0)
+      const equity      = (row?.share_capital ?? 0) + (row?.reserves ?? 0) + (row?.profit_and_loss ?? 0)
       return {
         month: m.short,
         cash, debtors, inventory, fixedAssets, creditors, loans, equity,
-        totalAssets:      cash + debtors + inventory + fixedAssets,
-        totalLiabilities: creditors + loans,
+        totalAssets:      cash + debtors + inventory + fixedAssets + investments + otherCA,
+        totalLiabilities: creditors + loans + otherCL,
       }
     }), [rawBS])
 
