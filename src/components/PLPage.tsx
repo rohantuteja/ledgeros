@@ -45,10 +45,17 @@ export default function PLPage({ plData, selectedMonth, fy, uploadStatus, expens
     return { openingStock: op, purchases: pur, closingStock: cl, cogs: op + pur - cl, directExp: dirExp }
   }
 
+  const COGS_NAMES = ['opening stock', 'add: purchase accounts', 'less: closing stock']
   const relevantItems   = selectedMonth !== null
     ? expenseItems.filter(e => e.month_index === selectedMonth)
     : expenseItems
   const { openingStock, purchases, closingStock, cogs: cogsTotal } = cogsAndDirectExp(relevantItems)
+
+  const directExpItems = relevantItems.filter(e =>
+    e.section === 'direct_expenses' ||
+    (e.section === 'trading_costs' && !COGS_NAMES.includes(e.ledger_name.toLowerCase()))
+  )
+  const directExpTotal = directExpItems.reduce((s, i) => s + i.amount, 0)
 
   // Per-month breakdown for chart
   const chartData = slice.map(row => {
@@ -97,6 +104,28 @@ export default function PLPage({ plData, selectedMonth, fy, uploadStatus, expens
               <span style={{ fontSize: 12, color: r.color, fontFamily: "'DM Mono',monospace", fontWeight: r.bold ? 600 : 400 }}>{fmt(r.value)}</span>
             </div>
           ))}
+        </div>
+      )}
+
+      {directExpItems.length > 0 && (
+        <div className="card" style={{ background: '#0f1117', border: '1px solid #1a1d2a', borderRadius: 12, padding: '18px 16px', marginBottom: 14 }}>
+          <div style={{ fontSize: 11, color: '#9ca3af', fontFamily: "'DM Mono',monospace", marginBottom: 14, textTransform: 'uppercase', letterSpacing: 1 }}>Direct Expenses Breakdown</div>
+          {directExpItems.map((item, i) => (
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #12151f' }}>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                <span style={{ width: 14, textAlign: 'center', fontSize: 12, color: '#4b5563', fontFamily: "'DM Mono',monospace" }}>·</span>
+                <span style={{ fontSize: 12, color: '#9ca3af' }}>{item.ledger_name}</span>
+              </div>
+              <span style={{ fontSize: 12, color: ACCENT3, fontFamily: "'DM Mono',monospace" }}>{fmt(item.amount)}</span>
+            </div>
+          ))}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0' }}>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+              <span style={{ width: 14, textAlign: 'center', fontSize: 12, color: '#4b5563', fontFamily: "'DM Mono',monospace" }}>=</span>
+              <span style={{ fontSize: 12, color: '#e2e8f0', fontWeight: 600 }}>Total Direct Expenses</span>
+            </div>
+            <span style={{ fontSize: 12, color: '#e2e8f0', fontFamily: "'DM Mono',monospace", fontWeight: 600 }}>{fmt(directExpTotal)}</span>
+          </div>
         </div>
       )}
 
