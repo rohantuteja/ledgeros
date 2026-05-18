@@ -30,7 +30,9 @@ function categorise(name: string): string {
 
 export default function Overview({ isMobile, plData, bsData, selectedMonth, fy, expenseItems, bsItems }: OverviewPageProps) {
   const slice   = selectedMonth !== null ? [plData[selectedMonth]] : plData
-  const bsSnap  = selectedMonth !== null ? bsData[selectedMonth] : bsData[bsData.length - 1]
+  const bsSnap  = selectedMonth !== null
+    ? bsData[selectedMonth]
+    : [...bsData].reverse().find(d => d.totalAssets > 0) ?? bsData[bsData.length - 1]
 
   const totalRevenue = slice.reduce((s, d) => s + d.revenue, 0)
   const totalProfit  = slice.reduce((s, d) => s + d.netProfit, 0)
