@@ -15,7 +15,9 @@ interface PLPageProps {
 }
 
 export default function PLPage({ plData, selectedMonths, fy, uploadStatus, expenseItems }: PLPageProps) {
-  const [show, setShow] = useState(false)
+  const [show,         setShow]         = useState(false)
+  const [showCogs,     setShowCogs]     = useState(true)
+  const [showDirExp,   setShowDirExp]   = useState(true)
 
   const isFiltered     = selectedMonths.length > 0
   const lastMonth      = isFiltered ? selectedMonths[selectedMonths.length - 1] : null
@@ -98,44 +100,64 @@ export default function PLPage({ plData, selectedMonths, fy, uploadStatus, expen
       </div>
 
       {cogsTotal > 0 && (
-        <div className="card" style={{ background: '#0f1117', border: '1px solid #1a1d2a', borderRadius: 12, padding: '18px 16px', marginBottom: 14 }}>
-          <div style={{ fontSize: 11, color: '#9ca3af', fontFamily: "'DM Mono',monospace", marginBottom: 14, textTransform: 'uppercase', letterSpacing: 1 }}>Cost of Goods Sold Breakdown</div>
-          {[
-            { label: 'Opening Stock',      value: openingStock,              prefix: '',  color: ACCENT3  },
-            { label: 'Purchases',          value: purchases,                 prefix: '+', color: ACCENT3  },
-            { label: 'Closing Stock',      value: closingStock,              prefix: '−', color: ACCENT2  },
-            { label: 'Cost of Goods Sold', value: cogsTotal, prefix: '=', color: '#e2e8f0', bold: true },
-          ].map(r => (
-            <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #12151f' }}>
-              <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                <span style={{ width: 14, textAlign: 'center', fontSize: 12, color: '#4b5563', fontFamily: "'DM Mono',monospace" }}>{r.prefix}</span>
-                <span style={{ fontSize: 12, color: '#9ca3af', fontWeight: r.bold ? 600 : 400 }}>{r.label}</span>
-              </div>
-              <span style={{ fontSize: 12, color: r.color, fontFamily: "'DM Mono',monospace", fontWeight: r.bold ? 600 : 400 }}>{fmt(r.value)}</span>
+        <div className="card" style={{ background: '#0f1117', border: '1px solid #1a1d2a', borderRadius: 12, marginBottom: 14, overflow: 'hidden' }}>
+          <button onClick={() => setShowCogs(!showCogs)} style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'transparent', border: 'none', cursor: 'pointer' }}>
+            <span style={{ fontSize: 11, color: '#9ca3af', fontFamily: "'DM Mono',monospace", textTransform: 'uppercase', letterSpacing: 1 }}>Cost of Goods Sold Breakdown</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ fontSize: 12, color: RED, fontFamily: "'DM Mono',monospace", fontWeight: 600 }}>{fmt(cogsTotal)}</span>
+              <span style={{ fontSize: 14, color: '#4b5563', transform: showCogs ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▾</span>
             </div>
-          ))}
+          </button>
+          {showCogs && (
+            <div style={{ padding: '0 16px 12px', borderTop: '1px solid #1a1d2a' }}>
+              {[
+                { label: 'Opening Stock',      value: openingStock, prefix: '',  color: ACCENT3              },
+                { label: 'Purchases',          value: purchases,    prefix: '+', color: ACCENT3              },
+                { label: 'Closing Stock',      value: closingStock, prefix: '−', color: ACCENT2              },
+                { label: 'Cost of Goods Sold', value: cogsTotal,    prefix: '=', color: '#e2e8f0', bold: true },
+              ].map(r => (
+                <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #12151f' }}>
+                  <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                    <span style={{ width: 14, textAlign: 'center', fontSize: 12, color: '#4b5563', fontFamily: "'DM Mono',monospace" }}>{r.prefix}</span>
+                    <span style={{ fontSize: 12, color: '#9ca3af', fontWeight: r.bold ? 600 : 400 }}>{r.label}</span>
+                  </div>
+                  <span style={{ fontSize: 12, color: r.color, fontFamily: "'DM Mono',monospace", fontWeight: r.bold ? 600 : 400 }}>{fmt(r.value)}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
       {directExpItems.length > 0 && (
-        <div className="card" style={{ background: '#0f1117', border: '1px solid #1a1d2a', borderRadius: 12, padding: '18px 16px', marginBottom: 14 }}>
-          <div style={{ fontSize: 11, color: '#9ca3af', fontFamily: "'DM Mono',monospace", marginBottom: 14, textTransform: 'uppercase', letterSpacing: 1 }}>Direct Expenses Breakdown</div>
-          {directExpItems.map((item, i) => (
-            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #12151f' }}>
-              <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                <span style={{ width: 14, textAlign: 'center', fontSize: 12, color: '#4b5563', fontFamily: "'DM Mono',monospace" }}>·</span>
-                <span style={{ fontSize: 12, color: '#9ca3af' }}>{item.ledger_name}</span>
+        <div className="card" style={{ background: '#0f1117', border: '1px solid #1a1d2a', borderRadius: 12, marginBottom: 14, overflow: 'hidden' }}>
+          <button onClick={() => setShowDirExp(!showDirExp)} style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'transparent', border: 'none', cursor: 'pointer' }}>
+            <span style={{ fontSize: 11, color: '#9ca3af', fontFamily: "'DM Mono',monospace", textTransform: 'uppercase', letterSpacing: 1 }}>Direct Expenses Breakdown</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ fontSize: 12, color: ACCENT3, fontFamily: "'DM Mono',monospace", fontWeight: 600 }}>{fmt(directExpTotal)}</span>
+              <span style={{ fontSize: 14, color: '#4b5563', transform: showDirExp ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▾</span>
+            </div>
+          </button>
+          {showDirExp && (
+            <div style={{ padding: '0 16px 12px', borderTop: '1px solid #1a1d2a' }}>
+              {directExpItems.map((item, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #12151f' }}>
+                  <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                    <span style={{ width: 14, textAlign: 'center', fontSize: 12, color: '#4b5563', fontFamily: "'DM Mono',monospace" }}>·</span>
+                    <span style={{ fontSize: 12, color: '#9ca3af' }}>{item.ledger_name}</span>
+                  </div>
+                  <span style={{ fontSize: 12, color: ACCENT3, fontFamily: "'DM Mono',monospace" }}>{fmt(item.amount)}</span>
+                </div>
+              ))}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0' }}>
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                  <span style={{ width: 14, textAlign: 'center', fontSize: 12, color: '#4b5563', fontFamily: "'DM Mono',monospace" }}>=</span>
+                  <span style={{ fontSize: 12, color: '#e2e8f0', fontWeight: 600 }}>Total Direct Expenses</span>
+                </div>
+                <span style={{ fontSize: 12, color: '#e2e8f0', fontFamily: "'DM Mono',monospace", fontWeight: 600 }}>{fmt(directExpTotal)}</span>
               </div>
-              <span style={{ fontSize: 12, color: ACCENT3, fontFamily: "'DM Mono',monospace" }}>{fmt(item.amount)}</span>
             </div>
-          ))}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0' }}>
-            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-              <span style={{ width: 14, textAlign: 'center', fontSize: 12, color: '#4b5563', fontFamily: "'DM Mono',monospace" }}>=</span>
-              <span style={{ fontSize: 12, color: '#e2e8f0', fontWeight: 600 }}>Total Direct Expenses</span>
-            </div>
-            <span style={{ fontSize: 12, color: '#e2e8f0', fontFamily: "'DM Mono',monospace", fontWeight: 600 }}>{fmt(directExpTotal)}</span>
-          </div>
+          )}
         </div>
       )}
 
