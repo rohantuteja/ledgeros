@@ -5,7 +5,7 @@ import { ACCENT, ACCENT2, ACCENT3, RED, MONTHS } from '@/lib/constants'
 import { SectionHeader } from '@/components/shared'
 import type { UploadStatus } from '@/lib/chartTypes'
 
-type UploadState = 'idle' | 'dragging' | 'staged' | 'confirming' | 'synced'
+type UploadState = 'idle' | 'dragging' | 'staged' | 'confirming' | 'confirm-delete' | 'synced'
 
 interface FileZoneProps {
   type: 'pl' | 'bs'
@@ -21,11 +21,12 @@ interface FileZoneProps {
   onFile: (file: File) => void
   onConfirm: () => void
   onCancel: () => void
+  onDelete: () => void
   targetMonth: { full: string; short: string } | null
   fy: string
 }
 
-function FileZone({ type, label, tag, colorRgb, hint, existingDate, state, setState, fileName, isExisting, onFile, onConfirm, onCancel, targetMonth, fy }: FileZoneProps) {
+function FileZone({ type, label, tag, colorRgb, hint, existingDate, state, setState, fileName, isExisting, onFile, onConfirm, onCancel, onDelete, targetMonth, fy }: FileZoneProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const color    = `rgb(${colorRgb})`
 
@@ -50,6 +51,12 @@ function FileZone({ type, label, tag, colorRgb, hint, existingDate, state, setSt
               {isExisting ? 'REPLACING' : 'NEW'}
             </span>
           )}
+          {isExisting && state === 'idle' && (
+            <button
+              onClick={() => setState('confirm-delete')}
+              style={{ fontSize: 9, background: 'rgba(248,113,113,0.08)', color: RED, border: '1px solid rgba(248,113,113,0.25)', borderRadius: 4, padding: '2px 8px', fontFamily: "'DM Mono',monospace", cursor: 'pointer' }}
+            >DELETE</button>
+          )}
           <span style={{ fontSize: 9, background: `rgba(${colorRgb},0.08)`, color, border: `1px solid rgba(${colorRgb},0.2)`, borderRadius: 5, padding: '3px 9px', fontFamily: "'DM Mono',monospace" }}>{tag}</span>
         </div>
       </div>
@@ -71,6 +78,24 @@ function FileZone({ type, label, tag, colorRgb, hint, existingDate, state, setSt
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={onConfirm} style={{ flex: 1, background: ACCENT3, color: '#000', border: 'none', borderRadius: 7, padding: '9px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'Syne',sans-serif" }}>Yes, Replace</button>
             <button onClick={onCancel}  style={{ flex: 1, background: 'transparent', color: '#6b7280', border: '1px solid #2a2d3a', borderRadius: 7, padding: '9px', fontSize: 12, cursor: 'pointer', fontFamily: "'DM Mono',monospace" }}>Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {state === 'confirm-delete' && (
+        <div style={{ background: 'rgba(248,113,113,0.06)', border: '1px solid rgba(248,113,113,0.25)', borderRadius: 10, padding: '14px 16px' }}>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 14 }}>
+            <span style={{ color: RED, fontSize: 18, flexShrink: 0 }}>⚠</span>
+            <div>
+              <div style={{ fontSize: 13, color: '#e2e8f0', fontWeight: 500, marginBottom: 4 }}>Delete uploaded data?</div>
+              <div style={{ fontSize: 11, color: '#6b7280', lineHeight: 1.6 }}>
+                This will permanently delete the {label} data for <span style={{ color: RED, fontFamily: "'DM Mono',monospace" }}>{targetMonth?.full} · {fy}</span>. This cannot be undone.
+              </div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={onDelete} style={{ flex: 1, background: RED, color: '#000', border: 'none', borderRadius: 7, padding: '9px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'Syne',sans-serif" }}>Yes, Delete</button>
+            <button onClick={() => setState('idle')} style={{ flex: 1, background: 'transparent', color: '#6b7280', border: '1px solid #2a2d3a', borderRadius: 7, padding: '9px', fontSize: 12, cursor: 'pointer', fontFamily: "'DM Mono',monospace" }}>Cancel</button>
           </div>
         </div>
       )}
@@ -187,6 +212,24 @@ export default function UploadPage({ fy, selectedMonth, uploadStatus, onDataRefr
     setConfirmWhich(null)
   }
 
+  async function handleDelete(type: 'pl' | 'bs') {
+    if (!targetMonth) return
+    setUploading(true)
+    setUploadError(null)
+    try {
+      const res  = await fetch('/api/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ financialYear: fy, monthIndex: targetMonth.idx, type }) })
+      const json = await res.json()
+      if (!json.success) throw new Error(json.error)
+      if (type === 'pl') setPLState('idle'); else setBSState('idle')
+      onDataRefresh()
+    } catch (e) {
+      setUploadError(e instanceof Error ? e.message : 'Delete failed')
+      if (type === 'pl') setPLState('idle'); else setBSState('idle')
+    } finally {
+      setUploading(false)
+    }
+  }
+
   async function handleSync() {
     if (!targetMonth) return
     setUploading(true)
@@ -270,6 +313,7 @@ export default function UploadPage({ fy, selectedMonth, uploadStatus, onDataRefr
           state={plState} setState={setPLState} fileName={plFileName} isExisting={existingPL}
           onFile={f => handleFile('pl', f)}
           onConfirm={() => confirmReplace('pl')} onCancel={() => cancelReplace('pl')}
+          onDelete={() => handleDelete('pl')}
           targetMonth={targetMonth ?? null} fy={fy}
         />
         <FileZone
@@ -279,6 +323,7 @@ export default function UploadPage({ fy, selectedMonth, uploadStatus, onDataRefr
           state={bsState} setState={setBSState} fileName={bsFileName} isExisting={existingBS}
           onFile={f => handleFile('bs', f)}
           onConfirm={() => confirmReplace('bs')} onCancel={() => cancelReplace('bs')}
+          onDelete={() => handleDelete('bs')}
           targetMonth={targetMonth ?? null} fy={fy}
         />
       </div>
