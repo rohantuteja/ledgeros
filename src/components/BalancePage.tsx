@@ -72,7 +72,7 @@ export default function BalancePage({ bsData, selectedMonths, fy, uploadStatus }
           <YAxis tick={{ fill: '#4b5563', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={fmtShort} width={50} />
           <Tooltip content={<CustomTooltip />} />
           <Legend wrapperStyle={{ fontSize: 10, color: '#6b7280' }} />
-          <Area type="monotone" dataKey="cash"      stroke={ACCENT}  strokeWidth={2} fill="url(#gCash)" name="Cash & Bank" />
+          <Area type="monotone" dataKey="cash"      stroke={ACCENT}  strokeWidth={2} fill="url(#gCash)" name="FDR & Cash & Bank" />
           <Area type="monotone" dataKey="debtors"   stroke={ACCENT2} strokeWidth={2} fill="url(#gDeb)"  name="Debtors"    />
           <Area type="monotone" dataKey="inventory" stroke={ACCENT3} strokeWidth={2} fill="url(#gInv)"  name="Inventory"  />
         </AreaChart>
@@ -98,7 +98,7 @@ export default function BalancePage({ bsData, selectedMonths, fy, uploadStatus }
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: 580 }}>
             <thead>
               <tr style={{ borderBottom: '1px solid #1a1d2a' }}>
-                {['Month', 'Cash', 'Debtors', 'Inventory', 'Fixed Assets', 'Creditors', 'Loans', 'Equity'].map(h => (
+                {['Month', 'FDR & Cash & Bank', 'Debtors', 'Inventory', 'Fixed Assets', 'Creditors', 'Loans', 'Equity'].map(h => (
                   <th key={h} style={{ padding: '11px 11px', textAlign: h === 'Month' ? 'left' : 'right', color: '#4b5563', fontFamily: "'DM Mono',monospace", fontSize: 9, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 500, whiteSpace: 'nowrap' }}>{h}</th>
                 ))}
               </tr>

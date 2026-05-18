@@ -145,8 +145,12 @@ export default function Dashboard() {
 
   const bsData = useMemo<BSChartRow[]>(() =>
     MONTHS.map(m => {
-      const row       = rawBS.find(d => d.month_index === m.idx)
-      const cash        = row?.cash_and_bank          ?? 0
+      const row         = rawBS.find(d => d.month_index === m.idx)
+      const monthBsItems = bsItems.filter(i => i.month_index === m.idx)
+      const cashFromItems = monthBsItems
+        .filter(i => { const n = i.ledger_name.toLowerCase(); return n.includes('bank') || n.includes('cash') || n.includes('fdr') })
+        .reduce((s, i) => s + i.amount, 0)
+      const cash        = cashFromItems || (row?.cash_and_bank ?? 0)
       const debtors     = row?.debtors                ?? 0
       const inventory   = row?.inventory              ?? 0
       const fixedAssets = row?.fixed_assets           ?? 0
@@ -162,7 +166,7 @@ export default function Dashboard() {
         totalAssets:      cash + debtors + inventory + fixedAssets + investments + otherCA,
         totalLiabilities: creditors + loans + otherCL,
       }
-    }), [rawBS])
+    }), [rawBS, bsItems])
 
   const buildUrl = (tab: string, fyVal: string, months: number[]) => {
     const p = new URLSearchParams({ tab, fy: fyVal })
