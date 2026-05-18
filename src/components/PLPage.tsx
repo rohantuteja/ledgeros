@@ -69,11 +69,10 @@ export default function PLPage({ plData, selectedMonth, fy, uploadStatus, expens
         <div className="card" style={{ background: '#0f1117', border: '1px solid #1a1d2a', borderRadius: 12, padding: '18px 16px', marginBottom: 14 }}>
           <div style={{ fontSize: 11, color: '#9ca3af', fontFamily: "'DM Mono',monospace", marginBottom: 14, textTransform: 'uppercase', letterSpacing: 1 }}>Cost of Goods Sold Breakdown</div>
           {[
-            { label: 'Opening Stock',   value: openingStock,   prefix: '',  color: ACCENT3  },
-            { label: 'Purchases',       value: purchases,      prefix: '+', color: ACCENT3  },
-            { label: 'Closing Stock',   value: closingStock,   prefix: '−', color: ACCENT2  },
-            { label: 'Direct Expenses', value: directExpenses, prefix: '+', color: RED      },
-            { label: 'Direct Costs',    value: cogsTotal,      prefix: '=', color: '#e2e8f0', bold: true },
+            { label: 'Opening Stock',      value: openingStock,              prefix: '',  color: ACCENT3  },
+            { label: 'Purchases',          value: purchases,                 prefix: '+', color: ACCENT3  },
+            { label: 'Closing Stock',      value: closingStock,              prefix: '−', color: ACCENT2  },
+            { label: 'Cost of Goods Sold', value: openingStock + purchases - closingStock, prefix: '=', color: '#e2e8f0', bold: true },
           ].map(r => (
             <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #12151f' }}>
               <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
