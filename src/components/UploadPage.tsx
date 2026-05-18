@@ -305,7 +305,7 @@ export default function UploadPage({ fy, selectedMonth, uploadStatus, onDataRefr
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 14, marginBottom: 18 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 14, marginBottom: 18, pointerEvents: targetMonth ? 'auto' : 'none', opacity: targetMonth ? 1 : 0.35 }}>
         <FileZone
           type="pl" label="P&L Statement" tag="MONTHLY" colorRgb="0,229,160"
           hint={targetMonth ? `${targetMonth.full} ${fy} · monthly P&L only` : 'Select a month first'}
