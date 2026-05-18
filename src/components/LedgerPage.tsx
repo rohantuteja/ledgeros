@@ -13,22 +13,42 @@ interface LedgerPageProps {
   uploadStatus: UploadStatus
 }
 
-const PL_SECTIONS: { key: string; label: string; color: string }[] = [
-  { key: 'trading_sales',     label: 'Trading Sales',      color: ACCENT  },
-  { key: 'trading_costs',     label: 'Cost of Goods Sold', color: RED     },
-  { key: 'direct_expenses',   label: 'Direct Expenses',    color: ACCENT3 },
-  { key: 'indirect_income',   label: 'Indirect Income',    color: ACCENT2 },
-  { key: 'indirect_expenses', label: 'Indirect Expenses',  color: '#f97316' },
+const COGS_NAMES = ['opening stock', 'add: purchase accounts', 'less: closing stock']
+
+interface Section {
+  id: string
+  label: string
+  color: string
+  items: LedgerLineItem[]
+}
+
+const BS_SECTION_DEFS = [
+  { key: 'fixed_assets',        label: 'Fixed Assets',        color: PURPLE    },
+  { key: 'investments',         label: 'Investments',         color: ACCENT2   },
+  { key: 'current_assets',      label: 'Current Assets',      color: ACCENT    },
+  { key: 'capital',             label: 'Capital',             color: ACCENT2   },
+  { key: 'loans',               label: 'Loans',               color: '#f97316' },
+  { key: 'current_liabilities', label: 'Current Liabilities', color: RED       },
 ]
 
-const BS_SECTIONS: { key: string; label: string; color: string }[] = [
-  { key: 'fixed_assets',        label: 'Fixed Assets',            color: PURPLE  },
-  { key: 'investments',         label: 'Investments',             color: ACCENT2 },
-  { key: 'current_assets',      label: 'Current Assets',          color: ACCENT  },
-  { key: 'capital',             label: 'Capital',                 color: ACCENT2 },
-  { key: 'loans',               label: 'Loans',                   color: '#f97316' },
-  { key: 'current_liabilities', label: 'Current Liabilities',     color: RED     },
-]
+function buildPLSections(items: LedgerLineItem[]): Section[] {
+  const get = (section: string, filter?: (i: LedgerLineItem) => boolean) =>
+    items.filter(i => i.section === section && (!filter || filter(i)))
+
+  return [
+    { id: 'trading_sales',     label: 'Trading Sales',      color: ACCENT,     items: get('trading_sales') },
+    { id: 'cogs',              label: 'Cost of Goods Sold', color: RED,        items: get('trading_costs', i => COGS_NAMES.includes(i.ledger_name.toLowerCase())) },
+    { id: 'direct_expenses',   label: 'Direct Expenses',    color: ACCENT3,    items: [...get('trading_costs', i => !COGS_NAMES.includes(i.ledger_name.toLowerCase())), ...get('direct_expenses')] },
+    { id: 'indirect_income',   label: 'Indirect Income',    color: ACCENT2,    items: get('indirect_income') },
+    { id: 'indirect_expenses', label: 'Indirect Expenses',  color: '#f97316',  items: get('indirect_expenses') },
+  ].filter(s => s.items.length > 0)
+}
+
+function buildBSSections(items: LedgerLineItem[]): Section[] {
+  return BS_SECTION_DEFS
+    .map(({ key, label, color }) => ({ id: key, label, color, items: items.filter(i => i.section === key) }))
+    .filter(s => s.items.length > 0)
+}
 
 function SectionTable({ items, color }: { items: LedgerLineItem[]; color: string }) {
   const total = items.reduce((s, i) => s + i.amount, 0)
@@ -54,13 +74,10 @@ export default function LedgerPage({ plItems, bsItems, selectedMonth, fy, upload
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({})
   const [tab, setTab] = useState<'pl' | 'bs'>('pl')
 
-  const toggle = (key: string) => setOpenSections(p => ({ ...p, [key]: !p[key] }))
+  const toggle = (id: string) => setOpenSections(p => ({ ...p, [id]: !p[id] }))
 
   const filterItems = (items: LedgerLineItem[]) =>
     selectedMonth !== null ? items.filter(i => i.month_index === selectedMonth) : items
-
-  const filteredPL = filterItems(plItems)
-  const filteredBS = filterItems(bsItems)
 
   const subLabel = selectedMonth !== null ? `${MONTHS[selectedMonth]?.full ?? ''} · ${fy}` : `Full Year · ${fy}`
 
@@ -68,15 +85,15 @@ export default function LedgerPage({ plItems, bsItems, selectedMonth, fy, upload
     ? (selectedMonth !== null ? uploadStatus.pl.includes(selectedMonth) : uploadStatus.pl.length > 0)
     : (selectedMonth !== null ? uploadStatus.bs.includes(selectedMonth) : uploadStatus.bs.length > 0)
 
-  const sections = tab === 'pl' ? PL_SECTIONS : BS_SECTIONS
-  const items    = tab === 'pl' ? filteredPL  : filteredBS
+  const sections = tab === 'pl'
+    ? buildPLSections(filterItems(plItems))
+    : buildBSSections(filterItems(bsItems))
 
   return (
     <div className="fade-in">
       <SectionHeader title="Ledger" sub={subLabel} />
       <ContextBanner fy={fy} selectedMonth={selectedMonth} />
 
-      {/* P&L / B/S toggle */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
         {(['pl', 'bs'] as const).map(t => (
           <button
@@ -93,21 +110,19 @@ export default function LedgerPage({ plItems, bsItems, selectedMonth, fy, upload
         <div style={{ textAlign: 'center', padding: '40px 0', color: '#4b5563', fontSize: 13 }}>
           No data uploaded for this period
         </div>
-      ) : sections.map(({ key, label, color }) => {
-        const sectionItems = items.filter(i => i.section === key)
-        if (sectionItems.length === 0) return null
-        const isOpen = openSections[key] ?? false
-        const total  = sectionItems.reduce((s, i) => s + i.amount, 0)
+      ) : sections.map(({ id, label, color, items }) => {
+        const isOpen = openSections[id] ?? false
+        const total  = items.reduce((s, i) => s + i.amount, 0)
         return (
-          <div key={key} style={{ marginBottom: 10, border: '1px solid #1a1d2a', borderRadius: 10, overflow: 'hidden' }}>
+          <div key={id} style={{ marginBottom: 10, border: '1px solid #1a1d2a', borderRadius: 10, overflow: 'hidden' }}>
             <button
-              onClick={() => toggle(key)}
+              onClick={() => toggle(id)}
               style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: '#0f1117', border: 'none', cursor: 'pointer' }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />
                 <span style={{ fontSize: 12, color: '#e2e8f0', fontWeight: 500 }}>{label}</span>
-                <span style={{ fontSize: 10, color: '#4b5563', fontFamily: "'DM Mono',monospace" }}>{sectionItems.length} entries</span>
+                <span style={{ fontSize: 10, color: '#4b5563', fontFamily: "'DM Mono',monospace" }}>{items.length} entries</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <span style={{ fontSize: 12, color, fontFamily: "'DM Mono',monospace", fontWeight: 600 }}>{fmt(total)}</span>
@@ -116,7 +131,7 @@ export default function LedgerPage({ plItems, bsItems, selectedMonth, fy, upload
             </button>
             {isOpen && (
               <div style={{ background: '#080b12', borderTop: '1px solid #1a1d2a' }}>
-                <SectionTable items={sectionItems} color={color} />
+                <SectionTable items={items} color={color} />
               </div>
             )}
           </div>
