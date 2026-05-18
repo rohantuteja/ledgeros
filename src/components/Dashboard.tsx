@@ -68,13 +68,19 @@ export default function Dashboard() {
   const width    = useWindowWidth()
   const isMobile = width < 768
 
-  const [active, setActive] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const tab = new URLSearchParams(window.location.search).get('tab')
-      if (tab && ['overview', 'pl', 'balance', 'cashflow', 'ledger', 'upload'].includes(tab)) return tab
+  const [active, setActive] = useState('overview')
+
+  useEffect(() => {
+    const tab = new URLSearchParams(window.location.search).get('tab')
+    if (tab && ['overview', 'pl', 'balance', 'cashflow', 'ledger', 'upload'].includes(tab)) setActive(tab)
+
+    const onPop = () => {
+      const t = new URLSearchParams(window.location.search).get('tab')
+      setActive(t && ['overview', 'pl', 'balance', 'cashflow', 'ledger', 'upload'].includes(t) ? t : 'overview')
     }
-    return 'overview'
-  })
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [])
   const [drawerOpen,      setDrawerOpen]      = useState(false)
   const [fy,              setFy]              = useState(FY_LIST[0])
   const [selectedMonths,  setSelectedMonths]  = useState<number[]>([])
