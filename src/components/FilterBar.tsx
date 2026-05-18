@@ -77,10 +77,12 @@ export default function FilterBar({ fy, setFy, selectedMonths, setSelectedMonths
           <div ref={pillRef} className="pill-strip"
             style={{ display: 'flex', gap: 6, overflowX: 'auto', overflowY: 'hidden', WebkitOverflowScrolling: 'touch', touchAction: 'pan-x', width: '100%', paddingBottom: isMobile ? 6 : 0, paddingLeft: isMobile ? 14 : 0, paddingRight: isMobile ? 14 : 0, scrollbarWidth: 'none', alignItems: 'center', height: isMobile ? 40 : 38 }}
           >
-            <button
-              onClick={() => setSelectedMonths([])}
-              style={{ flexShrink: 0, background: selectedMonths.length === 0 ? ACCENT : 'transparent', color: selectedMonths.length === 0 ? '#000' : '#6b7280', border: `1px solid ${selectedMonths.length === 0 ? ACCENT : '#2a2d3a'}`, borderRadius: 6, padding: '0 12px', height: 28, fontSize: 11, fontFamily: "'DM Mono',monospace", cursor: 'pointer', fontWeight: selectedMonths.length === 0 ? 600 : 400, transition: 'background 0.15s ease, color 0.15s ease, border-color 0.15s ease', whiteSpace: 'nowrap' }}
-            >All</button>
+            {!allowAll && (
+              <button
+                onClick={() => setSelectedMonths([])}
+                style={{ flexShrink: 0, background: selectedMonths.length === 0 ? ACCENT : 'transparent', color: selectedMonths.length === 0 ? '#000' : '#6b7280', border: `1px solid ${selectedMonths.length === 0 ? ACCENT : '#2a2d3a'}`, borderRadius: 6, padding: '0 12px', height: 28, fontSize: 11, fontFamily: "'DM Mono',monospace", cursor: 'pointer', fontWeight: selectedMonths.length === 0 ? 600 : 400, transition: 'background 0.15s ease, color 0.15s ease, border-color 0.15s ease', whiteSpace: 'nowrap' }}
+              >All</button>
+            )}
 
             {MONTHS.map(m => {
               const isActive  = selectedMonths.includes(m.idx)
