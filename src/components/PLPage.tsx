@@ -4,16 +4,17 @@ import { useState } from 'react'
 import { BarChart, Bar, ComposedChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, Legend } from 'recharts'
 import { ACCENT, ACCENT2, ACCENT3, RED, PURPLE, MONTHS, fmt, fmtShort } from '@/lib/constants'
 import { KpiCard, SectionHeader, ChartCard, ContextBanner, ToggleTableBtn, NoData, CustomTooltip } from '@/components/shared'
-import type { PLChartRow, UploadStatus } from '@/lib/chartTypes'
+import type { PLChartRow, UploadStatus, ExpenseLineItem } from '@/lib/chartTypes'
 
 interface PLPageProps {
   plData: PLChartRow[]
   selectedMonth: number | null
   fy: string
   uploadStatus: UploadStatus
+  expenseItems: ExpenseLineItem[]
 }
 
-export default function PLPage({ plData, selectedMonth, fy, uploadStatus }: PLPageProps) {
+export default function PLPage({ plData, selectedMonth, fy, uploadStatus, expenseItems }: PLPageProps) {
   const [show, setShow] = useState(false)
 
   if (selectedMonth !== null && !uploadStatus.pl.includes(selectedMonth)) {
@@ -27,6 +28,19 @@ export default function PLPage({ plData, selectedMonth, fy, uploadStatus }: PLPa
 
   const slice           = selectedMonth !== null ? [plData[selectedMonth]] : plData
   const uploadedMonths  = uploadStatus.pl.length
+
+  const relevantItems   = selectedMonth !== null
+    ? expenseItems.filter(e => e.month_index === selectedMonth)
+    : expenseItems
+  const sumSection = (section: string) =>
+    relevantItems.filter(e => e.section === section).reduce((s, e) => s + e.amount, 0)
+  const openingStock   = sumSection('trading_costs') > 0
+    ? relevantItems.filter(e => e.section === 'trading_costs' && e.ledger_name.toLowerCase().includes('opening stock')).reduce((s, e) => s + e.amount, 0)
+    : 0
+  const purchases      = relevantItems.filter(e => e.section === 'trading_costs' && e.ledger_name.toLowerCase().includes('purchase')).reduce((s, e) => s + e.amount, 0)
+  const closingStock   = relevantItems.filter(e => e.section === 'trading_costs' && e.ledger_name.toLowerCase().includes('closing stock')).reduce((s, e) => s + e.amount, 0)
+  const directExpenses = relevantItems.filter(e => e.section === 'direct_expenses' || (e.section === 'trading_costs' && !e.ledger_name.toLowerCase().includes('opening stock') && !e.ledger_name.toLowerCase().includes('purchase') && !e.ledger_name.toLowerCase().includes('closing stock'))).reduce((s, e) => s + e.amount, 0)
+  const cogsTotal      = openingStock + purchases - closingStock + directExpenses
   const totalRevenue    = slice.reduce((s, d) => s + d.revenue, 0)
   const totalGross      = slice.reduce((s, d) => s + d.grossProfit, 0)
   const totalNet        = slice.reduce((s, d) => s + d.netProfit, 0)
@@ -50,6 +64,27 @@ export default function PLPage({ plData, selectedMonth, fy, uploadStatus }: PLPa
           color={PURPLE}
         />
       </div>
+
+      {cogsTotal > 0 && (
+        <div className="card" style={{ background: '#0f1117', border: '1px solid #1a1d2a', borderRadius: 12, padding: '18px 16px', marginBottom: 14 }}>
+          <div style={{ fontSize: 11, color: '#9ca3af', fontFamily: "'DM Mono',monospace", marginBottom: 14, textTransform: 'uppercase', letterSpacing: 1 }}>Cost of Goods Sold Breakdown</div>
+          {[
+            { label: 'Opening Stock',   value: openingStock,   prefix: '',  color: ACCENT3  },
+            { label: 'Purchases',       value: purchases,      prefix: '+', color: ACCENT3  },
+            { label: 'Closing Stock',   value: closingStock,   prefix: '−', color: ACCENT2  },
+            { label: 'Direct Expenses', value: directExpenses, prefix: '+', color: RED      },
+            { label: 'Direct Costs',    value: cogsTotal,      prefix: '=', color: '#e2e8f0', bold: true },
+          ].map(r => (
+            <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #12151f' }}>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                <span style={{ width: 14, textAlign: 'center', fontSize: 12, color: '#4b5563', fontFamily: "'DM Mono',monospace" }}>{r.prefix}</span>
+                <span style={{ fontSize: 12, color: '#9ca3af', fontWeight: r.bold ? 600 : 400 }}>{r.label}</span>
+              </div>
+              <span style={{ fontSize: 12, color: r.color, fontFamily: "'DM Mono',monospace", fontWeight: r.bold ? 600 : 400 }}>{fmt(r.value)}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
       <ChartCard title="Revenue · Direct Costs · Operating Expenses" height={240}>
         <BarChart data={slice} barGap={2}>
