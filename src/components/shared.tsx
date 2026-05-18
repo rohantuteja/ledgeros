@@ -17,7 +17,7 @@ export function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
     <div style={{ background: '#0f1117', border: '1px solid #2a2d3a', borderRadius: 8, padding: '10px 14px', fontSize: 11, fontFamily: "'DM Mono',monospace" }}>
       <p style={{ color: '#6b7280', marginBottom: 6 }}>{label}</p>
       {payload.map(p => (
-        <p key={p.name} style={{ color: p.color, margin: '2px 0' }}>{p.name}: {fmt(Math.abs(p.value))}</p>
+        <p key={p.name} style={{ color: p.color, margin: '2px 0' }}>{p.name}: {fmt(p.value)}</p>
       ))}
     </div>
   )
