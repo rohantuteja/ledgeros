@@ -136,7 +136,7 @@ export default function Overview({ isMobile, plData, bsData, selectedMonth, fy, 
             Balance Sheet · {bsSnap.month} End
           </div>
           {[
-            { label: 'Cash & Bank',  value:  bsSnap.cash,        color: ACCENT    },
+            { label: 'FDR & Cash & Bank', value: totalBalance,    color: ACCENT    },
             { label: 'Debtors',      value:  bsSnap.debtors,     color: ACCENT2   },
             { label: 'Inventory',    value:  bsSnap.inventory,   color: ACCENT3   },
             { label: 'Fixed Assets', value:  bsSnap.fixedAssets, color: PURPLE    },
