@@ -29,4 +29,5 @@ export interface ExpenseLineItem {
   month_index: number
   ledger_name: string
   amount: number
+  section: string
 }

@@ -30,9 +30,9 @@ export async function GET(req: NextRequest) {
         .order('month_index', { ascending: true }),
       supabaseAdmin
         .from('pl_line_items')
-        .select('month_index, ledger_name, amount')
+        .select('month_index, ledger_name, amount, section')
         .eq('financial_year', fy)
-        .eq('section', 'indirect_expenses'),
+        .in('section', ['indirect_expenses', 'direct_expenses', 'trading_costs']),
     ])
 
     if (uploadsResult.error) throw new Error(`Uploads fetch failed: ${uploadsResult.error.message}`)

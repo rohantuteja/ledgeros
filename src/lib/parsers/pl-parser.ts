@@ -103,7 +103,7 @@ function extractTradingCostItems(
             upload_id: uploadId,
             financial_year: financialYear,
             month_index: monthIndex,
-            section: 'trading_costs',
+            section: 'direct_expenses',
             ledger_name: getLedgerName(d),
             amount: -rawAmt,
             created_at: '',
@@ -112,7 +112,18 @@ function extractTradingCostItems(
       } else {
         // No explosion — use the group total
         const amt = getSubAmt(dirExp?.plamt ?? [])
-        if (amt !== 0) push(getLedgerName(dirExp), amt)
+        if (amt !== 0) {
+          items.push({
+            id: '',
+            upload_id: uploadId,
+            financial_year: financialYear,
+            month_index: monthIndex,
+            section: 'direct_expenses',
+            ledger_name: getLedgerName(dirExp),
+            amount: -amt,
+            created_at: '',
+          })
+        }
       }
     }
   }

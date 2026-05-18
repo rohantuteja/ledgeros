@@ -36,9 +36,14 @@ export default function Overview({ isMobile, plData, bsData, selectedMonth, fy, 
   const margin       = totalRevenue ? ((totalProfit / totalRevenue) * 100).toFixed(1) : '0.0'
   const subLabel     = selectedMonth !== null ? (MONTHS[selectedMonth]?.full ?? '') : `Full Year · ${fy}`
 
-  const relevantItems = selectedMonth !== null
+  const STOCK_PURCHASE_NAMES = ['opening stock', 'add: purchase accounts', 'less: closing stock']
+  const relevantItems = (selectedMonth !== null
     ? expenseItems.filter(e => e.month_index === selectedMonth)
     : expenseItems
+  ).filter(e =>
+    e.section !== 'trading_costs' ||
+    !STOCK_PURCHASE_NAMES.includes(e.ledger_name.toLowerCase())
+  )
 
   const categoryTotals: Record<string, number> = {}
   for (const item of relevantItems) {
