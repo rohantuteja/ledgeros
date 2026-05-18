@@ -3,7 +3,7 @@
 import { AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts'
 import { ACCENT, ACCENT2, ACCENT3, RED, PURPLE, MONTHS, fmt, fmtShort } from '@/lib/constants'
 import { KpiCard, SectionHeader, ChartCard, ContextBanner, CustomTooltip } from '@/components/shared'
-import type { PLChartRow, BSChartRow, ExpenseLineItem } from '@/lib/chartTypes'
+import type { PLChartRow, BSChartRow, ExpenseLineItem, LedgerLineItem } from '@/lib/chartTypes'
 
 interface OverviewPageProps {
   isMobile: boolean
@@ -12,6 +12,7 @@ interface OverviewPageProps {
   selectedMonth: number | null
   fy: string
   expenseItems: ExpenseLineItem[]
+  bsItems: LedgerLineItem[]
 }
 
 const EXPENSE_COLORS = [ACCENT, RED, ACCENT3, ACCENT2, PURPLE, '#94a3b8']
@@ -27,7 +28,7 @@ function categorise(name: string): string {
   return 'Others'
 }
 
-export default function Overview({ isMobile, plData, bsData, selectedMonth, fy, expenseItems }: OverviewPageProps) {
+export default function Overview({ isMobile, plData, bsData, selectedMonth, fy, expenseItems, bsItems }: OverviewPageProps) {
   const slice   = selectedMonth !== null ? [plData[selectedMonth]] : plData
   const bsSnap  = selectedMonth !== null ? bsData[selectedMonth] : bsData[bsData.length - 1]
 
@@ -61,6 +62,17 @@ export default function Overview({ isMobile, plData, bsData, selectedMonth, fy, 
       color:  EXPENSE_COLORS[i],
     }))
 
+  const latestBsMonth = bsItems.length > 0 ? Math.max(...bsItems.map(i => i.month_index)) : null
+  const bsMonthForBalance = selectedMonth !== null ? selectedMonth : latestBsMonth
+  const balanceItems = bsMonthForBalance !== null ? bsItems.filter(i => i.month_index === bsMonthForBalance) : []
+  const totalBalance = balanceItems
+    .filter(i => {
+      const n = i.ledger_name.toLowerCase()
+      return n.includes('bank') || n.includes('cash') || n.includes('fdr')
+    })
+    .reduce((s, i) => s + i.amount, 0)
+  const balanceMonth = bsMonthForBalance !== null ? (MONTHS[bsMonthForBalance]?.short ?? '') : ''
+
   if (!bsSnap) return null
 
   return (
@@ -69,10 +81,10 @@ export default function Overview({ isMobile, plData, bsData, selectedMonth, fy, 
       <ContextBanner fy={fy} selectedMonth={selectedMonth} />
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4,1fr)', gap: 12, marginBottom: 16 }}>
-        <KpiCard label="Revenue"         value={fmt(totalRevenue)} sub={subLabel}                               color={ACCENT}  tag="P&L" />
-        <KpiCard label="Net Profit"      value={fmt(totalProfit)}  sub={`${margin}% margin`}                    color={totalProfit >= 0 ? ACCENT2 : RED} tag="P&L" />
-        <KpiCard label="Cash & Bank"     value={fmt(bsSnap.cash)}  sub={`As of ${bsSnap.month} end`}            color={ACCENT3} tag="B/S" />
-        <KpiCard label="Working Capital" value={fmt(bsSnap.debtors + bsSnap.cash - bsSnap.creditors)} sub="Current assets − creditors" color={PURPLE} tag="B/S" />
+        <KpiCard label="Revenue"             value={fmt(totalRevenue)}                        sub={subLabel}                          color={ACCENT}  tag="P&L" />
+        <KpiCard label="Marketing Expenses"  value={fmt(categoryTotals['Marketing'] ?? 0)}  sub={subLabel}                          color={RED}     tag="P&L" />
+        <KpiCard label="Net Profit"          value={fmt(totalProfit)}                        sub={`${margin}% margin`}               color={totalProfit >= 0 ? ACCENT2 : RED} tag="P&L" />
+        <KpiCard label="Total Balance"       value={fmt(totalBalance)}                       sub={balanceMonth ? `As of ${balanceMonth} end` : '—'} color={ACCENT3} tag="B/S" />
       </div>
 
       <ChartCard title="Revenue vs Net Profit" height={200} hint={selectedMonth !== null ? 'Single month' : 'Monthly trend'}>

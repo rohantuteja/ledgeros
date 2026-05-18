@@ -140,7 +140,7 @@ export default function Dashboard() {
   }
 
   const pages: Record<string, React.ReactNode> = {
-    overview: <Overview     isMobile={isMobile} plData={plData} bsData={bsData} selectedMonth={selectedMonth} fy={fy} expenseItems={expenseItems} />,
+    overview: <Overview     isMobile={isMobile} plData={plData} bsData={bsData} selectedMonth={selectedMonth} fy={fy} expenseItems={expenseItems} bsItems={bsItems} />,
     pl:       <PLPage       plData={plData} selectedMonth={selectedMonth} fy={fy} uploadStatus={uploadStatus} expenseItems={expenseItems} />,
     balance:  <BalancePage  bsData={bsData} selectedMonth={selectedMonth} fy={fy} uploadStatus={uploadStatus} />,
     cashflow: <CashFlowPage bsData={bsData} selectedMonth={selectedMonth} fy={fy} uploadStatus={uploadStatus} />,
