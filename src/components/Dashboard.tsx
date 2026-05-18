@@ -71,9 +71,22 @@ export default function Dashboard() {
   const [active,         setActive]         = useState('overview')
   const [drawerOpen,     setDrawerOpen]     = useState(false)
   const [fy,             setFy]             = useState(FY_LIST[0])
+  const [fyList,         setFyList]         = useState<string[]>(FY_LIST)
   const [selectedMonths, setSelectedMonths] = useState<number[]>([])
 
   const VALID_TABS = ['overview', 'pl', 'balance', 'cashflow', 'ledger', 'upload']
+
+  const fetchFyList = useCallback(async (activeFy: string) => {
+    try {
+      const res  = await fetch('/api/financial-years')
+      const json = await res.json()
+      const list: string[] = json.fyList ?? FY_LIST
+      setFyList(list)
+      if (list.length > 0 && !list.includes(activeFy)) {
+        setFy(list[0])
+      }
+    } catch {}
+  }, [])
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -82,23 +95,26 @@ export default function Dashboard() {
     const mParam  = params.get('months')
 
     if (tab && VALID_TABS.includes(tab)) setActive(tab)
-    if (fyParam && FY_LIST.includes(fyParam)) setFy(fyParam)
+    const resolvedFy = fyParam ?? FY_LIST[0]
+    if (fyParam) setFy(fyParam)
     if (mParam) {
       const months = mParam.split(',').map(Number).filter(n => !isNaN(n) && n >= 0 && n <= 11)
       if (months.length > 0) setSelectedMonths(months)
     }
 
+    fetchFyList(resolvedFy)
+
     const onPop = () => {
       const p = new URLSearchParams(window.location.search)
       const t = p.get('tab')
       setActive(t && VALID_TABS.includes(t) ? t : 'overview')
-      const f = p.get('fy'); if (f && FY_LIST.includes(f)) setFy(f)
+      const f = p.get('fy'); if (f) setFy(f)
       const m = p.get('months')
       setSelectedMonths(m ? m.split(',').map(Number).filter(n => !isNaN(n) && n >= 0 && n <= 11) : [])
     }
     window.addEventListener('popstate', onPop)
     return () => window.removeEventListener('popstate', onPop)
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const [rawPL,        setRawPL]        = useState<PLSummary[]>([])
   const [rawBS,        setRawBS]        = useState<BSSummary[]>([])
@@ -196,7 +212,7 @@ export default function Dashboard() {
     balance:  <BalancePage  bsData={bsData} selectedMonths={selectedMonths} fy={fy} uploadStatus={uploadStatus} />,
     cashflow: <CashFlowPage bsData={bsData} selectedMonths={selectedMonths} fy={fy} uploadStatus={uploadStatus} />,
     ledger:   <LedgerPage   plItems={expenseItems} bsItems={bsItems} selectedMonths={selectedMonths} fy={fy} uploadStatus={uploadStatus} />,
-    upload:   <UploadPage   fy={fy} selectedMonth={selectedMonths[0] ?? null} uploadStatus={uploadStatus} onDataRefresh={fetchData} />,
+    upload:   <UploadPage   fy={fy} selectedMonth={selectedMonths[0] ?? null} uploadStatus={uploadStatus} onDataRefresh={fetchData} fyList={fyList} onFyListChange={() => fetchFyList(fy)} />,
   }
 
   return (
@@ -300,7 +316,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        <FilterBar fy={fy} setFy={handleFyChange} selectedMonths={selectedMonths} setSelectedMonths={handleMonthsChange} isMobile={isMobile} uploadStatus={uploadStatus} allowAll={active === 'upload'} />
+        <FilterBar fy={fy} setFy={handleFyChange} selectedMonths={selectedMonths} setSelectedMonths={handleMonthsChange} isMobile={isMobile} uploadStatus={uploadStatus} allowAll={active === 'upload'} fyList={fyList} />
 
         <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '18px 14px 88px' : '28px 36px' }}>
           {loading ? (

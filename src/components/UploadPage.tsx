@@ -166,9 +166,11 @@ interface UploadPageProps {
   selectedMonth: number | null
   uploadStatus: UploadStatus
   onDataRefresh: () => void
+  fyList: string[]
+  onFyListChange: () => void
 }
 
-export default function UploadPage({ fy, selectedMonth, uploadStatus, onDataRefresh }: UploadPageProps) {
+export default function UploadPage({ fy, selectedMonth, uploadStatus, onDataRefresh, fyList, onFyListChange }: UploadPageProps) {
   const [plState,      setPLState]      = useState<UploadState>('idle')
   const [bsState,      setBSState]      = useState<UploadState>('idle')
   const [plFile,       setPLFile]       = useState<File | null>(null)
@@ -178,6 +180,11 @@ export default function UploadPage({ fy, selectedMonth, uploadStatus, onDataRefr
   const [confirmWhich, setConfirmWhich] = useState<'pl' | 'bs' | null>(null)
   const [uploading,    setUploading]    = useState(false)
   const [uploadError,  setUploadError]  = useState<string | null>(null)
+
+  const [newFyName,  setNewFyName]  = useState('')
+  const [fyWorking,  setFyWorking]  = useState(false)
+  const [fyError,    setFyError]    = useState<string | null>(null)
+  const [deletingFy, setDeletingFy] = useState<string | null>(null)
 
   const targetMonth = selectedMonth !== null ? MONTHS[selectedMonth] : null
   const existingPL  = targetMonth ? uploadStatus.pl.includes(targetMonth.idx) : false
@@ -262,6 +269,40 @@ export default function UploadPage({ fy, selectedMonth, uploadStatus, onDataRefr
       setUploadError(e instanceof Error ? e.message : 'Upload failed')
     } finally {
       setUploading(false)
+    }
+  }
+
+  async function handleAddFy() {
+    const name = newFyName.trim()
+    if (!name) return
+    if (fyList.includes(name)) { setFyError('Already exists'); return }
+    setFyWorking(true); setFyError(null)
+    try {
+      const res  = await fetch('/api/financial-years', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) })
+      const json = await res.json()
+      if (!json.success) throw new Error(json.error)
+      setNewFyName('')
+      onFyListChange()
+    } catch (e) {
+      setFyError(e instanceof Error ? e.message : 'Failed to add')
+    } finally {
+      setFyWorking(false)
+    }
+  }
+
+  async function handleDeleteFy(name: string) {
+    setFyWorking(true); setFyError(null)
+    try {
+      const res  = await fetch('/api/financial-years', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name }) })
+      const json = await res.json()
+      if (!json.success) throw new Error(json.error)
+      setDeletingFy(null)
+      onFyListChange()
+      onDataRefresh()
+    } catch (e) {
+      setFyError(e instanceof Error ? e.message : 'Failed to delete')
+    } finally {
+      setFyWorking(false)
     }
   }
 
@@ -372,6 +413,63 @@ export default function UploadPage({ fy, selectedMonth, uploadStatus, onDataRefr
               </div>
             )
           })}
+        </div>
+      </div>
+
+      {/* FY Management */}
+      <div className="card" style={{ background: '#0f1117', border: '1px solid #1a1d2a', borderRadius: 12, overflow: 'hidden', marginTop: 14 }}>
+        <div style={{ padding: '14px 18px', borderBottom: '1px solid #1a1d2a' }}>
+          <div style={{ fontSize: 11, color: '#9ca3af', fontFamily: "'DM Mono',monospace", textTransform: 'uppercase', letterSpacing: 1 }}>Manage Financial Years</div>
+        </div>
+
+        {/* Existing FYs */}
+        <div style={{ padding: '10px 18px 4px' }}>
+          {fyList.map(f => (
+            <div key={f} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 0', borderBottom: '1px solid #12151f' }}>
+              <span style={{ fontSize: 13, color: f === fy ? ACCENT : '#9ca3af', fontFamily: "'DM Mono',monospace" }}>
+                {f}{f === fy && <span style={{ fontSize: 9, color: ACCENT, marginLeft: 8 }}>ACTIVE</span>}
+              </span>
+              {deletingFy === f ? (
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <span style={{ fontSize: 11, color: '#6b7280' }}>Delete all data for {f}?</span>
+                  <button
+                    onClick={() => handleDeleteFy(f)}
+                    disabled={fyWorking}
+                    style={{ fontSize: 10, background: RED, color: '#000', border: 'none', borderRadius: 4, padding: '3px 10px', fontFamily: "'Syne',sans-serif", fontWeight: 700, cursor: fyWorking ? 'default' : 'pointer' }}
+                  >{fyWorking ? '…' : 'Confirm'}</button>
+                  <button
+                    onClick={() => setDeletingFy(null)}
+                    style={{ fontSize: 10, background: 'transparent', color: '#4b5563', border: '1px solid #2a2d3a', borderRadius: 4, padding: '3px 10px', fontFamily: "'DM Mono',monospace", cursor: 'pointer' }}
+                  >Cancel</button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => { setDeletingFy(f); setFyError(null) }}
+                  style={{ fontSize: 9, background: 'rgba(248,113,113,0.08)', color: RED, border: '1px solid rgba(248,113,113,0.25)', borderRadius: 4, padding: '2px 8px', fontFamily: "'DM Mono',monospace", cursor: 'pointer' }}
+                >DELETE</button>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Add new FY */}
+        <div style={{ padding: '14px 18px 16px', borderTop: '1px solid #1a1d2a', marginTop: 6 }}>
+          <div style={{ fontSize: 10, color: '#4b5563', fontFamily: "'DM Mono',monospace", textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Add Financial Year</div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input
+              value={newFyName}
+              onChange={e => { setNewFyName(e.target.value); setFyError(null) }}
+              onKeyDown={e => e.key === 'Enter' && handleAddFy()}
+              placeholder="e.g. FY 27-28"
+              style={{ flex: 1, background: '#0a0d15', border: `1px solid ${fyError ? RED : '#2a2d3a'}`, borderRadius: 7, padding: '8px 12px', fontSize: 12, color: '#e2e8f0', fontFamily: "'DM Mono',monospace", outline: 'none' }}
+            />
+            <button
+              onClick={handleAddFy}
+              disabled={fyWorking || !newFyName.trim()}
+              style={{ background: newFyName.trim() ? ACCENT : '#1a1d2a', color: newFyName.trim() ? '#000' : '#374151', border: 'none', borderRadius: 7, padding: '8px 18px', fontSize: 12, fontFamily: "'Syne',sans-serif", fontWeight: 700, cursor: newFyName.trim() ? 'pointer' : 'default', transition: 'all 0.15s ease', whiteSpace: 'nowrap' }}
+            >{fyWorking ? '…' : '+ Add'}</button>
+          </div>
+          {fyError && <div style={{ fontSize: 11, color: RED, marginTop: 6 }}>{fyError}</div>}
         </div>
       </div>
     </div>
