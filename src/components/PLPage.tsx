@@ -25,13 +25,14 @@ export default function PLPage({ plData, selectedMonth, fy, uploadStatus }: PLPa
     )
   }
 
-  const slice        = selectedMonth !== null ? [plData[selectedMonth]] : plData
-  const totalRevenue = slice.reduce((s, d) => s + d.revenue, 0)
-  const totalGross   = slice.reduce((s, d) => s + d.grossProfit, 0)
-  const totalNet     = slice.reduce((s, d) => s + d.netProfit, 0)
-  const grossMargin  = totalRevenue ? ((totalGross / totalRevenue) * 100).toFixed(1) : '0'
-  const netMargin    = totalRevenue ? ((totalNet   / totalRevenue) * 100).toFixed(1) : '0'
-  const subLabel     = selectedMonth !== null ? `${MONTHS[selectedMonth]?.full ?? ''} · ${fy}` : `Full Year · ${fy}`
+  const slice           = selectedMonth !== null ? [plData[selectedMonth]] : plData
+  const uploadedMonths  = uploadStatus.pl.length
+  const totalRevenue    = slice.reduce((s, d) => s + d.revenue, 0)
+  const totalGross      = slice.reduce((s, d) => s + d.grossProfit, 0)
+  const totalNet        = slice.reduce((s, d) => s + d.netProfit, 0)
+  const grossMargin     = totalRevenue ? ((totalGross / totalRevenue) * 100).toFixed(1) : '0'
+  const netMargin       = totalRevenue ? ((totalNet   / totalRevenue) * 100).toFixed(1) : '0'
+  const subLabel        = selectedMonth !== null ? `${MONTHS[selectedMonth]?.full ?? ''} · ${fy}` : `Full Year · ${fy}`
 
   return (
     <div className="fade-in">
@@ -44,7 +45,7 @@ export default function PLPage({ plData, selectedMonth, fy, uploadStatus }: PLPa
         <KpiCard label="Net Profit"   value={fmt(totalNet)}     sub={`${netMargin}% net margin`}        color={totalNet >= 0 ? ACCENT3 : RED} />
         <KpiCard
           label={selectedMonth !== null ? 'Monthly Rev' : 'Avg Monthly Rev'}
-          value={fmt(selectedMonth !== null ? totalRevenue : totalRevenue / 12)}
+          value={fmt(selectedMonth !== null ? totalRevenue : (uploadedMonths ? totalRevenue / uploadedMonths : 0))}
           sub={selectedMonth !== null ? 'This month' : 'Per month'}
           color={PURPLE}
         />
