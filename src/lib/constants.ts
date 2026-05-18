@@ -28,6 +28,7 @@ export const NAV_ITEMS = [
   { id: 'pl',       icon: '◈', label: 'P&L'       },
   { id: 'balance',  icon: '⊞', label: 'Balance'   },
   { id: 'cashflow', icon: '◎', label: 'Cash Flow' },
+  { id: 'ledger',   icon: '≡', label: 'Ledger'    },
   { id: 'upload',   icon: '⊕', label: 'Upload'    },
 ]
 

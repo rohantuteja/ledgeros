@@ -31,3 +31,10 @@ export interface ExpenseLineItem {
   amount: number
   section: string
 }
+
+export interface LedgerLineItem {
+  month_index: number
+  ledger_name: string
+  amount: number
+  section: string
+}

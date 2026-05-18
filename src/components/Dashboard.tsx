@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { ACCENT, MONTHS, NAV_ITEMS, FY_LIST, RED } from '@/lib/constants'
-import type { PLChartRow, BSChartRow, UploadStatus, ExpenseLineItem } from '@/lib/chartTypes'
+import type { PLChartRow, BSChartRow, UploadStatus, ExpenseLineItem, LedgerLineItem } from '@/lib/chartTypes'
 import type { PLSummary, BSSummary } from '@/lib/types'
 import FilterBar   from '@/components/FilterBar'
 import Overview    from '@/components/Overview'
@@ -10,6 +10,7 @@ import PLPage      from '@/components/PLPage'
 import BalancePage from '@/components/BalancePage'
 import CashFlowPage from '@/components/CashFlowPage'
 import UploadPage  from '@/components/UploadPage'
+import LedgerPage  from '@/components/LedgerPage'
 
 // ── SSR-safe window width hook ────────────────────────────
 function useWindowWidth() {
@@ -75,6 +76,7 @@ export default function Dashboard() {
   const [rawPL,        setRawPL]        = useState<PLSummary[]>([])
   const [rawBS,        setRawBS]        = useState<BSSummary[]>([])
   const [expenseItems, setExpenseItems] = useState<ExpenseLineItem[]>([])
+  const [bsItems,      setBsItems]      = useState<LedgerLineItem[]>([])
   const [uploadStatus, setUploadStatus] = useState<UploadStatus>({ pl: [], bs: [] })
   const [loading,  setLoading]  = useState(true)
   const [error,    setError]    = useState<string | null>(null)
@@ -90,6 +92,7 @@ export default function Dashboard() {
       setRawPL(json.plData ?? [])
       setRawBS(json.bsData ?? [])
       setExpenseItems(json.expenseItems ?? [])
+      setBsItems(json.bsItems ?? [])
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to fetch data')
     } finally {
@@ -141,6 +144,7 @@ export default function Dashboard() {
     pl:       <PLPage       plData={plData} selectedMonth={selectedMonth} fy={fy} uploadStatus={uploadStatus} expenseItems={expenseItems} />,
     balance:  <BalancePage  bsData={bsData} selectedMonth={selectedMonth} fy={fy} uploadStatus={uploadStatus} />,
     cashflow: <CashFlowPage bsData={bsData} selectedMonth={selectedMonth} fy={fy} uploadStatus={uploadStatus} />,
+    ledger:   <LedgerPage   plItems={expenseItems} bsItems={bsItems} selectedMonth={selectedMonth} fy={fy} uploadStatus={uploadStatus} />,
     upload:   <UploadPage   fy={fy} selectedMonth={selectedMonth} uploadStatus={uploadStatus} onDataRefresh={fetchData} />,
   }
 
