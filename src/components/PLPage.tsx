@@ -16,8 +16,8 @@ interface PLPageProps {
 
 export default function PLPage({ plData, selectedMonths, fy, uploadStatus, expenseItems }: PLPageProps) {
   const [show,         setShow]         = useState(false)
-  const [showCogs,     setShowCogs]     = useState(true)
-  const [showDirExp,   setShowDirExp]   = useState(true)
+  const [showCogs,     setShowCogs]     = useState(false)
+  const [showDirExp,   setShowDirExp]   = useState(false)
 
   const isFiltered     = selectedMonths.length > 0
   const lastMonth      = isFiltered ? selectedMonths[selectedMonths.length - 1] : null
