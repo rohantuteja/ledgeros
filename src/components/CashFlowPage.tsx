@@ -1,7 +1,7 @@
 'use client'
 
 import { ComposedChart, Bar, Line, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend } from 'recharts'
-import { ACCENT, ACCENT2, ACCENT3, RED, PURPLE, MONTHS, fmt } from '@/lib/constants'
+import { ACCENT, ACCENT2, ACCENT3, RED, PURPLE, MONTHS, fmt, fmtShort } from '@/lib/constants'
 import { KpiCard, SectionHeader, ChartCard, ContextBanner, CustomTooltip } from '@/components/shared'
 import type { BSChartRow, UploadStatus } from '@/lib/chartTypes'
 
@@ -65,7 +65,7 @@ export default function CashFlowPage({ bsData, selectedMonth, fy, uploadStatus }
         <ComposedChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" stroke="#1a1d2a" vertical={false} />
           <XAxis dataKey="month" tick={{ fill: '#4b5563', fontSize: 10 }} axisLine={false} tickLine={false} />
-          <YAxis tick={{ fill: '#4b5563', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={fmt} width={50} />
+          <YAxis tick={{ fill: '#4b5563', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={fmtShort} width={50} />
           <Tooltip content={<CustomTooltip />} />
           <Legend wrapperStyle={{ fontSize: 10, color: '#6b7280' }} />
           <Bar  dataKey="net"     fill={ACCENT}  opacity={0.7} radius={[3, 3, 0, 0]} name="Net Change"       />
@@ -77,7 +77,7 @@ export default function CashFlowPage({ bsData, selectedMonth, fy, uploadStatus }
         <BarChart data={chartData} barGap={2}>
           <CartesianGrid strokeDasharray="3 3" stroke="#1a1d2a" vertical={false} />
           <XAxis dataKey="month" tick={{ fill: '#4b5563', fontSize: 10 }} axisLine={false} tickLine={false} />
-          <YAxis tick={{ fill: '#4b5563', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={fmt} width={50} />
+          <YAxis tick={{ fill: '#4b5563', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={fmtShort} width={50} />
           <Tooltip content={<CustomTooltip />} />
           <Legend wrapperStyle={{ fontSize: 10, color: '#6b7280' }} />
           <Bar dataKey="operating" fill={ACCENT}  opacity={0.85} radius={[3, 3, 0, 0]} name="Operating" />

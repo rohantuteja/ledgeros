@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { AreaChart, Area, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, Legend } from 'recharts'
-import { ACCENT, ACCENT2, ACCENT3, RED, PURPLE, MONTHS, fmt } from '@/lib/constants'
+import { ACCENT, ACCENT2, ACCENT3, RED, PURPLE, MONTHS, fmt, fmtShort } from '@/lib/constants'
 import { KpiCard, SectionHeader, ChartCard, ContextBanner, ToggleTableBtn, Divider, NoData, CustomTooltip } from '@/components/shared'
 import type { BSChartRow, UploadStatus } from '@/lib/chartTypes'
 
@@ -57,7 +57,7 @@ export default function BalancePage({ bsData, selectedMonth, fy, uploadStatus }:
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="#1a1d2a" />
           <XAxis dataKey="month" tick={{ fill: '#4b5563', fontSize: 10 }} axisLine={false} tickLine={false} />
-          <YAxis tick={{ fill: '#4b5563', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={fmt} width={50} />
+          <YAxis tick={{ fill: '#4b5563', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={fmtShort} width={50} />
           <Tooltip content={<CustomTooltip />} />
           <Legend wrapperStyle={{ fontSize: 10, color: '#6b7280' }} />
           <Area type="monotone" dataKey="cash"      stroke={ACCENT}  strokeWidth={2} fill="url(#gCash)" name="Cash & Bank" />
@@ -71,7 +71,7 @@ export default function BalancePage({ bsData, selectedMonth, fy, uploadStatus }:
         <BarChart data={chartData} barGap={3}>
           <CartesianGrid strokeDasharray="3 3" stroke="#1a1d2a" vertical={false} />
           <XAxis dataKey="month" tick={{ fill: '#4b5563', fontSize: 10 }} axisLine={false} tickLine={false} />
-          <YAxis tick={{ fill: '#4b5563', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={fmt} width={50} />
+          <YAxis tick={{ fill: '#4b5563', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={fmtShort} width={50} />
           <Tooltip content={<CustomTooltip />} />
           <Legend wrapperStyle={{ fontSize: 10, color: '#6b7280' }} />
           <Bar dataKey="creditors" fill={RED}      opacity={0.85} radius={[3, 3, 0, 0]} name="Creditors" />

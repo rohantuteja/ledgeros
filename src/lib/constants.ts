@@ -32,9 +32,16 @@ export const NAV_ITEMS = [
 ]
 
 export const fmt = (n: number): string => {
+  const sign = n < 0 ? '-' : ''
+  const abs  = Math.abs(n)
+  const formatted = abs.toLocaleString('en-IN', { maximumFractionDigits: 2 })
+  return `${sign}₹${formatted}`
+}
+
+export const fmtShort = (n: number): string => {
   const abs  = Math.abs(n)
   const sign = n < 0 ? '-' : ''
-  if (abs >= 10000000) return `${sign}₹${(abs / 10000000).toFixed(2)}Cr`
+  if (abs >= 10000000) return `${sign}₹${(abs / 10000000).toFixed(1)}Cr`
   if (abs >= 100000)   return `${sign}₹${(abs / 100000).toFixed(1)}L`
   return `${sign}₹${(abs / 1000).toFixed(0)}K`
 }

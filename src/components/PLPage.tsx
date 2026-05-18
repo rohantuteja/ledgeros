@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { BarChart, Bar, ComposedChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, Legend } from 'recharts'
-import { ACCENT, ACCENT2, ACCENT3, RED, PURPLE, MONTHS, fmt } from '@/lib/constants'
+import { ACCENT, ACCENT2, ACCENT3, RED, PURPLE, MONTHS, fmt, fmtShort } from '@/lib/constants'
 import { KpiCard, SectionHeader, ChartCard, ContextBanner, ToggleTableBtn, NoData, CustomTooltip } from '@/components/shared'
 import type { PLChartRow, UploadStatus } from '@/lib/chartTypes'
 
@@ -54,7 +54,7 @@ export default function PLPage({ plData, selectedMonth, fy, uploadStatus }: PLPa
         <BarChart data={slice} barGap={2}>
           <CartesianGrid strokeDasharray="3 3" stroke="#1a1d2a" vertical={false} />
           <XAxis dataKey="month" tick={{ fill: '#4b5563', fontSize: 10 }} axisLine={false} tickLine={false} />
-          <YAxis tick={{ fill: '#4b5563', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={fmt} width={50} />
+          <YAxis tick={{ fill: '#4b5563', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={fmtShort} width={50} />
           <Tooltip content={<CustomTooltip />} />
           <Legend wrapperStyle={{ fontSize: 10, color: '#6b7280' }} />
           <Bar dataKey="revenue"     fill={ACCENT}  opacity={0.85} radius={[3, 3, 0, 0]} name="Revenue"       />
@@ -67,7 +67,7 @@ export default function PLPage({ plData, selectedMonth, fy, uploadStatus }: PLPa
         <ComposedChart data={slice}>
           <CartesianGrid strokeDasharray="3 3" stroke="#1a1d2a" />
           <XAxis dataKey="month" tick={{ fill: '#4b5563', fontSize: 10 }} axisLine={false} tickLine={false} />
-          <YAxis tick={{ fill: '#4b5563', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={fmt} width={50} />
+          <YAxis tick={{ fill: '#4b5563', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={fmtShort} width={50} />
           <Tooltip content={<CustomTooltip />} />
           <Legend wrapperStyle={{ fontSize: 10, color: '#6b7280' }} />
           <Bar  dataKey="grossProfit" fill={ACCENT2} opacity={0.4} radius={[3, 3, 0, 0]} name="Gross Profit" />

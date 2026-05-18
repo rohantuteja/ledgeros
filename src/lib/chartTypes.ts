@@ -24,3 +24,9 @@ export interface UploadStatus {
   pl: number[]
   bs: number[]
 }
+
+export interface ExpenseLineItem {
+  month_index: number
+  ledger_name: string
+  amount: number
+}

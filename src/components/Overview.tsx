@@ -1,18 +1,9 @@
 'use client'
 
 import { AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts'
-import { ACCENT, ACCENT2, ACCENT3, RED, PURPLE, MONTHS, fmt } from '@/lib/constants'
+import { ACCENT, ACCENT2, ACCENT3, RED, PURPLE, MONTHS, fmt, fmtShort } from '@/lib/constants'
 import { KpiCard, SectionHeader, ChartCard, ContextBanner, CustomTooltip } from '@/components/shared'
-import type { PLChartRow, BSChartRow } from '@/lib/chartTypes'
-
-const topExpenses = [
-  { name: 'Employee Benefits', pct: 33 },
-  { name: 'Rent',              pct: 34 },
-  { name: 'Marketing',         pct: 14 },
-  { name: 'Electricity',       pct:  4 },
-  { name: 'Software',          pct:  1 },
-  { name: 'Others',            pct: 14 },
-]
+import type { PLChartRow, BSChartRow, ExpenseLineItem } from '@/lib/chartTypes'
 
 interface OverviewPageProps {
   isMobile: boolean
@@ -20,9 +11,23 @@ interface OverviewPageProps {
   bsData: BSChartRow[]
   selectedMonth: number | null
   fy: string
+  expenseItems: ExpenseLineItem[]
 }
 
-export default function Overview({ isMobile, plData, bsData, selectedMonth, fy }: OverviewPageProps) {
+const EXPENSE_COLORS = [ACCENT, RED, ACCENT3, ACCENT2, PURPLE, '#94a3b8']
+const CATEGORY_ORDER = ['Marketing', 'Salaries', 'Shipping', 'Rent', 'Software', 'Others']
+
+function categorise(name: string): string {
+  const n = name.toLowerCase()
+  if (n.includes('marketing'))                                                    return 'Marketing'
+  if (n.includes('employee benefit') || n.includes('salary') || n.includes('salaries')) return 'Salaries'
+  if (n.includes('shipping expense') || n.includes('shipping exp'))               return 'Shipping'
+  if (n.includes('rent') || n.includes('residence'))                              return 'Rent'
+  if (n.includes('software'))                                                     return 'Software'
+  return 'Others'
+}
+
+export default function Overview({ isMobile, plData, bsData, selectedMonth, fy, expenseItems }: OverviewPageProps) {
   const slice   = selectedMonth !== null ? [plData[selectedMonth]] : plData
   const bsSnap  = selectedMonth !== null ? bsData[selectedMonth] : bsData[bsData.length - 1]
 
@@ -30,6 +35,25 @@ export default function Overview({ isMobile, plData, bsData, selectedMonth, fy }
   const totalProfit  = slice.reduce((s, d) => s + d.netProfit, 0)
   const margin       = totalRevenue ? ((totalProfit / totalRevenue) * 100).toFixed(1) : '0.0'
   const subLabel     = selectedMonth !== null ? (MONTHS[selectedMonth]?.full ?? '') : `Full Year · ${fy}`
+
+  const relevantItems = selectedMonth !== null
+    ? expenseItems.filter(e => e.month_index === selectedMonth)
+    : expenseItems
+
+  const categoryTotals: Record<string, number> = {}
+  for (const item of relevantItems) {
+    const cat = categorise(item.ledger_name)
+    categoryTotals[cat] = (categoryTotals[cat] ?? 0) + item.amount
+  }
+  const grandTotal = Object.values(categoryTotals).reduce((s, v) => s + v, 0)
+  const categories = CATEGORY_ORDER
+    .filter(c => (categoryTotals[c] ?? 0) > 0)
+    .map((name, i) => ({
+      name,
+      amount: categoryTotals[name],
+      pct:    grandTotal ? (categoryTotals[name] / grandTotal) * 100 : 0,
+      color:  EXPENSE_COLORS[i],
+    }))
 
   if (!bsSnap) return null
 
@@ -59,7 +83,7 @@ export default function Overview({ isMobile, plData, bsData, selectedMonth, fy }
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="#1a1d2a" />
           <XAxis dataKey="month" tick={{ fill: '#4b5563', fontSize: 10 }} axisLine={false} tickLine={false} />
-          <YAxis tick={{ fill: '#4b5563', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={fmt} width={50} />
+          <YAxis tick={{ fill: '#4b5563', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={fmtShort} width={56} />
           <Tooltip content={<CustomTooltip />} />
           <Area type="monotone" dataKey="revenue"   stroke={ACCENT}  strokeWidth={2} fill="url(#gRev)"    name="Revenue"    />
           <Area type="monotone" dataKey="netProfit" stroke={ACCENT2} strokeWidth={2} fill="url(#gProfit)" name="Net Profit" />
@@ -69,14 +93,19 @@ export default function Overview({ isMobile, plData, bsData, selectedMonth, fy }
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 14 }}>
         <div className="card" style={{ background: '#0f1117', border: '1px solid #1a1d2a', borderRadius: 12, padding: '18px 16px' }}>
           <div style={{ fontSize: 11, color: '#9ca3af', fontFamily: "'DM Mono',monospace", marginBottom: 14, textTransform: 'uppercase', letterSpacing: 1 }}>Expense Breakdown · P&L</div>
-          {topExpenses.map((e, i) => (
-            <div key={e.name} style={{ marginBottom: 11 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
-                <span style={{ color: '#9ca3af' }}>{e.name}</span>
-                <span style={{ color: '#e2e8f0', fontFamily: "'DM Mono',monospace" }}>{e.pct}%</span>
+          {categories.length === 0 ? (
+            <div style={{ fontSize: 12, color: '#4b5563', textAlign: 'center', padding: '20px 0' }}>No expense data for this period</div>
+          ) : categories.map(e => (
+            <div key={e.name} style={{ marginBottom: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 5 }}>
+                <span style={{ fontSize: 12, color: '#9ca3af' }}>{e.name}</span>
+                <div style={{ display: 'flex', gap: 10, alignItems: 'baseline' }}>
+                  <span style={{ fontSize: 12, color: e.color, fontFamily: "'DM Mono',monospace" }}>{fmt(e.amount)}</span>
+                  <span style={{ fontSize: 10, color: '#4b5563', fontFamily: "'DM Mono',monospace" }}>{e.pct.toFixed(1)}%</span>
+                </div>
               </div>
               <div style={{ height: 4, background: '#1a1d2a', borderRadius: 2 }}>
-                <div style={{ height: '100%', width: `${e.pct}%`, borderRadius: 2, background: [ACCENT, RED, ACCENT3, ACCENT2, PURPLE, '#94a3b8'][i] }} />
+                <div style={{ height: '100%', width: `${e.pct}%`, borderRadius: 2, background: e.color }} />
               </div>
             </div>
           ))}

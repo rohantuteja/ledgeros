@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
       )
     }
 
-    const [uploadsResult, plResult, bsResult] = await Promise.all([
+    const [uploadsResult, plResult, bsResult, expenseItemsResult] = await Promise.all([
       supabaseAdmin
         .from('uploads')
         .select('month_index, file_type')
@@ -28,11 +28,17 @@ export async function GET(req: NextRequest) {
         .select('*')
         .eq('financial_year', fy)
         .order('month_index', { ascending: true }),
+      supabaseAdmin
+        .from('pl_line_items')
+        .select('month_index, ledger_name, amount')
+        .eq('financial_year', fy)
+        .eq('section', 'indirect_expenses'),
     ])
 
     if (uploadsResult.error) throw new Error(`Uploads fetch failed: ${uploadsResult.error.message}`)
     if (plResult.error) throw new Error(`PL fetch failed: ${plResult.error.message}`)
     if (bsResult.error) throw new Error(`BS fetch failed: ${bsResult.error.message}`)
+    if (expenseItemsResult.error) throw new Error(`Expense items fetch failed: ${expenseItemsResult.error.message}`)
 
     const uploads = uploadsResult.data ?? []
     const uploadStatus = {
@@ -44,6 +50,7 @@ export async function GET(req: NextRequest) {
       uploadStatus,
       plData: plResult.data ?? [],
       bsData: bsResult.data ?? [],
+      expenseItems: expenseItemsResult.data ?? [],
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error'
