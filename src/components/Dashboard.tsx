@@ -68,7 +68,13 @@ export default function Dashboard() {
   const width    = useWindowWidth()
   const isMobile = width < 768
 
-  const [active,          setActive]          = useState('overview')
+  const [active, setActive] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const tab = new URLSearchParams(window.location.search).get('tab')
+      if (tab && ['overview', 'pl', 'balance', 'cashflow', 'ledger', 'upload'].includes(tab)) return tab
+    }
+    return 'overview'
+  })
   const [drawerOpen,      setDrawerOpen]      = useState(false)
   const [fy,              setFy]              = useState(FY_LIST[0])
   const [selectedMonths,  setSelectedMonths]  = useState<number[]>([])
@@ -134,6 +140,11 @@ export default function Dashboard() {
       }
     }), [rawBS])
 
+  const navigate = (tab: string) => {
+    setActive(tab)
+    window.history.pushState({}, '', `?tab=${tab}`)
+  }
+
   const handleFyChange = (newFy: string) => {
     setFy(newFy)
     setSelectedMonths([])
@@ -183,7 +194,7 @@ export default function Dashboard() {
             {NAV_ITEMS.map(item => {
               const on = active === item.id
               return (
-                <div key={item.id} className="nav-item" onClick={() => setActive(item.id)}
+                <div key={item.id} className="nav-item" onClick={() => navigate(item.id)}
                   style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 20px', margin: '2px 10px', borderRadius: 8, background: on ? 'rgba(0,229,160,0.08)' : 'transparent', borderLeft: on ? `2px solid ${ACCENT}` : '2px solid transparent', color: on ? ACCENT : '#6b7280', fontSize: 13.5, fontWeight: on ? 500 : 400 }}
                 >
                   <span style={{ fontSize: 16 }}>{item.icon}</span>{item.label}
@@ -219,7 +230,7 @@ export default function Dashboard() {
               {NAV_ITEMS.map(item => {
                 const on = active === item.id
                 return (
-                  <div key={item.id} className="nav-item" onClick={() => { setActive(item.id); setDrawerOpen(false) }}
+                  <div key={item.id} className="nav-item" onClick={() => { navigate(item.id); setDrawerOpen(false) }}
                     style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 18px', margin: '2px 10px', borderRadius: 8, background: on ? 'rgba(0,229,160,0.08)' : 'transparent', borderLeft: on ? `2px solid ${ACCENT}` : '2px solid transparent', color: on ? ACCENT : '#6b7280', fontSize: 14, fontWeight: on ? 500 : 400 }}
                   >
                     <span style={{ fontSize: 18 }}>{item.icon}</span>{item.label}
@@ -267,7 +278,7 @@ export default function Dashboard() {
             {NAV_ITEMS.map(item => {
               const on = active === item.id
               return (
-                <button key={item.id} className="bnav-btn" onClick={() => setActive(item.id)} style={{ color: on ? ACCENT : '#4b5563' }}>
+                <button key={item.id} className="bnav-btn" onClick={() => navigate(item.id)} style={{ color: on ? ACCENT : '#4b5563' }}>
                   {on && <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: 22, height: 2, background: ACCENT, borderRadius: '0 0 2px 2px' }} />}
                   <span style={{ fontSize: 18 }}>{item.icon}</span>
                   <span style={{ fontSize: 9, fontFamily: "'DM Mono',monospace", letterSpacing: 0.5, textTransform: 'uppercase' }}>{item.label}</span>
