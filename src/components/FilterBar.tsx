@@ -28,10 +28,13 @@ export default function FilterBar({ fy, setFy, selectedMonths, setSelectedMonths
   }, [])
 
   const toggle = (idx: number) => {
-    if (selectedMonths.includes(idx)) {
-      setSelectedMonths(selectedMonths.filter(x => x !== idx))
+    if (allowAll) {
+      // Upload tab: single-select only
+      setSelectedMonths(selectedMonths.includes(idx) ? [] : [idx])
     } else {
-      setSelectedMonths([...selectedMonths, idx].sort((a, b) => a - b))
+      setSelectedMonths(selectedMonths.includes(idx)
+        ? selectedMonths.filter(x => x !== idx)
+        : [...selectedMonths, idx].sort((a, b) => a - b))
     }
   }
 
