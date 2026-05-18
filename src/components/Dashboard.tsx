@@ -68,22 +68,37 @@ export default function Dashboard() {
   const width    = useWindowWidth()
   const isMobile = width < 768
 
-  const [active, setActive] = useState('overview')
+  const [active,         setActive]         = useState('overview')
+  const [drawerOpen,     setDrawerOpen]     = useState(false)
+  const [fy,             setFy]             = useState(FY_LIST[0])
+  const [selectedMonths, setSelectedMonths] = useState<number[]>([])
+
+  const VALID_TABS = ['overview', 'pl', 'balance', 'cashflow', 'ledger', 'upload']
 
   useEffect(() => {
-    const tab = new URLSearchParams(window.location.search).get('tab')
-    if (tab && ['overview', 'pl', 'balance', 'cashflow', 'ledger', 'upload'].includes(tab)) setActive(tab)
+    const params = new URLSearchParams(window.location.search)
+    const tab    = params.get('tab')
+    const fyParam = params.get('fy')
+    const mParam  = params.get('months')
+
+    if (tab && VALID_TABS.includes(tab)) setActive(tab)
+    if (fyParam && FY_LIST.includes(fyParam)) setFy(fyParam)
+    if (mParam) {
+      const months = mParam.split(',').map(Number).filter(n => !isNaN(n) && n >= 0 && n <= 11)
+      if (months.length > 0) setSelectedMonths(months)
+    }
 
     const onPop = () => {
-      const t = new URLSearchParams(window.location.search).get('tab')
-      setActive(t && ['overview', 'pl', 'balance', 'cashflow', 'ledger', 'upload'].includes(t) ? t : 'overview')
+      const p = new URLSearchParams(window.location.search)
+      const t = p.get('tab')
+      setActive(t && VALID_TABS.includes(t) ? t : 'overview')
+      const f = p.get('fy'); if (f && FY_LIST.includes(f)) setFy(f)
+      const m = p.get('months')
+      setSelectedMonths(m ? m.split(',').map(Number).filter(n => !isNaN(n) && n >= 0 && n <= 11) : [])
     }
     window.addEventListener('popstate', onPop)
     return () => window.removeEventListener('popstate', onPop)
   }, [])
-  const [drawerOpen,      setDrawerOpen]      = useState(false)
-  const [fy,              setFy]              = useState(FY_LIST[0])
-  const [selectedMonths,  setSelectedMonths]  = useState<number[]>([])
 
   const [rawPL,        setRawPL]        = useState<PLSummary[]>([])
   const [rawBS,        setRawBS]        = useState<BSSummary[]>([])
@@ -146,14 +161,26 @@ export default function Dashboard() {
       }
     }), [rawBS])
 
+  const buildUrl = (tab: string, fyVal: string, months: number[]) => {
+    const p = new URLSearchParams({ tab, fy: fyVal })
+    if (months.length > 0) p.set('months', months.join(','))
+    return `?${p.toString()}`
+  }
+
   const navigate = (tab: string) => {
     setActive(tab)
-    window.history.pushState({}, '', `?tab=${tab}`)
+    window.history.pushState({}, '', buildUrl(tab, fy, selectedMonths))
   }
 
   const handleFyChange = (newFy: string) => {
     setFy(newFy)
     setSelectedMonths([])
+    window.history.replaceState({}, '', buildUrl(active, newFy, []))
+  }
+
+  const handleMonthsChange = (months: number[]) => {
+    setSelectedMonths(months)
+    window.history.replaceState({}, '', buildUrl(active, fy, months))
   }
 
   const pages: Record<string, React.ReactNode> = {
@@ -266,7 +293,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        <FilterBar fy={fy} setFy={handleFyChange} selectedMonths={selectedMonths} setSelectedMonths={setSelectedMonths} isMobile={isMobile} uploadStatus={uploadStatus} allowAll={active === 'upload'} />
+        <FilterBar fy={fy} setFy={handleFyChange} selectedMonths={selectedMonths} setSelectedMonths={handleMonthsChange} isMobile={isMobile} uploadStatus={uploadStatus} allowAll={active === 'upload'} />
 
         <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '18px 14px 88px' : '28px 36px' }}>
           {loading ? (
