@@ -31,15 +31,15 @@ export default function BalancePage({ bsData, selectedMonths, fy, uploadStatus }
     )
   }
 
-  const snap      = isFiltered
-    ? bsData[lastMonth!]
-    : [...bsData].reverse().find(d => d.totalAssets > 0) ?? bsData[bsData.length - 1]
-  const subLabel  = !isFiltered
-    ? `As of latest end · ${fy}`
-    : selectedMonths.length === 1
-      ? `As of ${MONTHS[selectedMonths[0]]?.full ?? ''} end · ${fy}`
-      : `As of ${MONTHS[lastMonth!]?.short ?? ''} end · ${fy}`
-  const chartData = isFiltered ? bsData.slice(0, lastMonth! + 1) : bsData
+  const latestBsIdx = uploadStatus.bs.length > 0 ? Math.max(...uploadStatus.bs) : null
+  const snapIdx     = isFiltered ? lastMonth! : latestBsIdx
+  const snap        = snapIdx !== null ? bsData[snapIdx] : null
+  const subLabel    = snapIdx !== null
+    ? `As of ${MONTHS[snapIdx]?.full ?? ''} end · ${fy}`
+    : `No data · ${fy}`
+  const chartData   = isFiltered
+    ? bsData.slice(0, lastMonth! + 1)
+    : bsData.filter((_, i) => uploadStatus.bs.includes(i))
   const dte       = snap && snap.equity > 0 ? `${(snap.loans / snap.equity).toFixed(2)}x` : 'N/A'
 
   if (!snap) return null
