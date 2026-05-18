@@ -20,8 +20,8 @@ const CATEGORY_ORDER = ['Marketing', 'Salaries', 'Shipping', 'Rent', 'Software',
 function categorise(name: string): string {
   const n = name.toLowerCase()
   if (n.includes('marketing'))                                                              return 'Marketing'
-  if (n.includes('employee ben') || n.includes('salary') || n.includes('salaries'))        return 'Salaries'
-  if (n.includes('shipping') || n.includes('freight'))                                     return 'Shipping'
+  if (n.includes('employee benifit'))                                                        return 'Salaries'
+  if (n.includes('shipping'))                                                               return 'Shipping'
   if (n.includes('rent') || n.includes('residence'))                                       return 'Rent'
   if (n.includes('software'))                                                               return 'Software'
   return 'Others'
