@@ -7,12 +7,14 @@ import type { BSChartRow, UploadStatus } from '@/lib/chartTypes'
 
 interface CashFlowPageProps {
   bsData: BSChartRow[]
-  selectedMonth: number | null
+  selectedMonths: number[]
   fy: string
   uploadStatus: UploadStatus
 }
 
-export default function CashFlowPage({ bsData, selectedMonth, fy, uploadStatus }: CashFlowPageProps) {
+export default function CashFlowPage({ bsData, selectedMonths, fy, uploadStatus }: CashFlowPageProps) {
+  const isFiltered = selectedMonths.length > 0
+  const lastMonth  = isFiltered ? selectedMonths[selectedMonths.length - 1] : null
   const bsWithData = bsData.filter((_, i) => uploadStatus.bs.includes(i))
 
   if (bsWithData.length === 0) {
@@ -41,18 +43,22 @@ export default function CashFlowPage({ bsData, selectedMonth, fy, uploadStatus }
     }
   })
 
-  const chartData = selectedMonth !== null
-    ? cfData.filter((_, i) => bsWithData[i] && bsData.indexOf(bsWithData[i]) <= selectedMonth)
+  const chartData = isFiltered
+    ? cfData.filter((_, i) => bsWithData[i] && bsData.indexOf(bsWithData[i]) <= lastMonth!)
     : cfData
   const snap      = chartData[chartData.length - 1] ?? cfData[cfData.length - 1]
   const totalNet  = chartData.reduce((s, d) => s + d.net, 0)
-  const subLabel  = selectedMonth !== null ? `Apr → ${MONTHS[selectedMonth]?.short ?? ''} · ${fy}` : `Full Year · ${fy}`
+  const subLabel  = !isFiltered
+    ? `Full Year · ${fy}`
+    : selectedMonths.length === 1
+      ? `${MONTHS[selectedMonths[0]]?.full ?? ''} · ${fy}`
+      : `Apr → ${MONTHS[lastMonth!]?.short ?? ''} · ${fy}`
   const bestMonth = chartData.reduce((a, b) => b.net > a.net ? b : a, chartData[0])
 
   return (
     <div className="fade-in">
       <SectionHeader title="Cash Flow" sub={`Derived from Balance Sheets · ${subLabel}`} />
-      <ContextBanner fy={fy} selectedMonth={selectedMonth} />
+      <ContextBanner fy={fy} selectedMonths={selectedMonths} />
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
         <KpiCard label="Opening Cash" value={fmt(cfData[0].opening)} sub="Start of period"       color={ACCENT}  />

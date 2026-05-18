@@ -1,20 +1,20 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { ACCENT, ACCENT3, FY_LIST, MONTHS } from '@/lib/constants'
 import type { UploadStatus } from '@/lib/chartTypes'
 
 interface FilterBarProps {
   fy: string
   setFy: (fy: string) => void
-  selectedMonth: number | null
-  setSelectedMonth: (m: number | null) => void
+  selectedMonths: number[]
+  setSelectedMonths: (m: number[]) => void
   isMobile: boolean
   uploadStatus: UploadStatus
   allowAll?: boolean
 }
 
-export default function FilterBar({ fy, setFy, selectedMonth, setSelectedMonth, isMobile, uploadStatus, allowAll = false }: FilterBarProps) {
+export default function FilterBar({ fy, setFy, selectedMonths, setSelectedMonths, isMobile, uploadStatus, allowAll = false }: FilterBarProps) {
   const [fyOpen, setFyOpen] = useState(false)
   const fyRef   = useRef<HTMLDivElement>(null)
   const pillRef = useRef<HTMLDivElement>(null)
@@ -27,15 +27,13 @@ export default function FilterBar({ fy, setFy, selectedMonth, setSelectedMonth, 
     return () => document.removeEventListener('mousedown', h)
   }, [])
 
-  useEffect(() => {
-    if (!pillRef.current || selectedMonth === null) return
-    const container = pillRef.current
-    const active = container.querySelector('.pill-active') as HTMLElement | null
-    if (!active) return
-    const cRect = container.getBoundingClientRect()
-    const pRect = active.getBoundingClientRect()
-    container.scrollBy({ left: pRect.left - cRect.left - cRect.width / 2 + pRect.width / 2, behavior: 'smooth' })
-  }, [selectedMonth])
+  const toggle = (idx: number) => {
+    if (selectedMonths.includes(idx)) {
+      setSelectedMonths(selectedMonths.filter(x => x !== idx))
+    } else {
+      setSelectedMonths([...selectedMonths, idx].sort((a, b) => a - b))
+    }
+  }
 
   const hasData = (idx: number) => uploadStatus.pl.includes(idx) && uploadStatus.bs.includes(idx)
   const hasPL   = (idx: number) => uploadStatus.pl.includes(idx)
@@ -58,7 +56,7 @@ export default function FilterBar({ fy, setFy, selectedMonth, setSelectedMonth, 
           {fyOpen && (
             <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, background: '#141720', border: '1px solid #2a2d3a', borderRadius: 8, zIndex: 200, minWidth: 130, boxShadow: '0 8px 32px rgba(0,0,0,0.6)' }}>
               {FY_LIST.map(f => (
-                <div key={f} onClick={() => { setFy(f); setSelectedMonth(null); setFyOpen(false) }}
+                <div key={f} onClick={() => { setFy(f); setSelectedMonths([]); setFyOpen(false) }}
                   className="nav-item"
                   style={{ padding: '10px 16px', fontSize: 12, fontFamily: "'DM Mono',monospace", cursor: 'pointer', color: f === fy ? ACCENT : '#9ca3af', background: f === fy ? 'rgba(0,229,160,0.06)' : 'transparent', borderBottom: '1px solid #1a1d2a' }}
                 >
@@ -77,22 +75,21 @@ export default function FilterBar({ fy, setFy, selectedMonth, setSelectedMonth, 
             style={{ display: 'flex', gap: 6, overflowX: 'auto', overflowY: 'hidden', WebkitOverflowScrolling: 'touch', touchAction: 'pan-x', width: '100%', paddingBottom: isMobile ? 6 : 0, paddingLeft: isMobile ? 14 : 0, paddingRight: isMobile ? 14 : 0, scrollbarWidth: 'none', alignItems: 'center', height: isMobile ? 40 : 38 }}
           >
             <button
-              onClick={() => setSelectedMonth(null)}
-              style={{ flexShrink: 0, background: selectedMonth === null ? ACCENT : 'transparent', color: selectedMonth === null ? '#000' : '#6b7280', border: `1px solid ${selectedMonth === null ? ACCENT : '#2a2d3a'}`, borderRadius: 6, padding: '0 12px', height: 28, fontSize: 11, fontFamily: "'DM Mono',monospace", cursor: 'pointer', fontWeight: selectedMonth === null ? 600 : 400, transition: 'background 0.15s ease, color 0.15s ease, border-color 0.15s ease', whiteSpace: 'nowrap' }}
+              onClick={() => setSelectedMonths([])}
+              style={{ flexShrink: 0, background: selectedMonths.length === 0 ? ACCENT : 'transparent', color: selectedMonths.length === 0 ? '#000' : '#6b7280', border: `1px solid ${selectedMonths.length === 0 ? ACCENT : '#2a2d3a'}`, borderRadius: 6, padding: '0 12px', height: 28, fontSize: 11, fontFamily: "'DM Mono',monospace", cursor: 'pointer', fontWeight: selectedMonths.length === 0 ? 600 : 400, transition: 'background 0.15s ease, color 0.15s ease, border-color 0.15s ease', whiteSpace: 'nowrap' }}
             >All</button>
 
             {MONTHS.map(m => {
-              const isActive   = selectedMonth === m.idx
-              const full       = hasData(m.idx)
-              const partial    = !full && (hasPL(m.idx) || hasBS(m.idx))
-              const missing    = !full && !partial
-              const clickable  = allowAll || !missing
-              const dotColor   = full ? ACCENT : partial ? ACCENT3 : 'transparent'
+              const isActive  = selectedMonths.includes(m.idx)
+              const full      = hasData(m.idx)
+              const partial   = !full && (hasPL(m.idx) || hasBS(m.idx))
+              const missing   = !full && !partial
+              const clickable = allowAll || !missing
+              const dotColor  = full ? ACCENT : partial ? ACCENT3 : 'transparent'
               return (
                 <button
                   key={m.idx}
-                  className={isActive ? 'pill-active' : ''}
-                  onClick={() => clickable && setSelectedMonth(isActive ? null : m.idx)}
+                  onClick={() => clickable && toggle(m.idx)}
                   title={missing && !allowAll ? `${m.full} — no data uploaded` : partial ? `${m.full} — partial (${hasPL(m.idx) ? 'P&L' : ''}${hasPL(m.idx) && hasBS(m.idx) ? '+' : ''}${hasBS(m.idx) ? 'B/S' : ''} only)` : m.full}
                   style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5, background: isActive ? ACCENT : missing ? 'transparent' : 'rgba(0,229,160,0.05)', color: isActive ? '#000' : missing ? (allowAll ? '#6b7280' : '#2a2d3a') : '#9ca3af', border: `1px solid ${isActive ? ACCENT : missing ? (allowAll ? '#2a2d3a' : '#1e2130') : partial ? ACCENT3 : '#2a2d3a'}`, borderStyle: missing && !allowAll ? 'dashed' : 'solid', borderRadius: 6, padding: '0 10px', height: 28, fontSize: 11, fontFamily: "'DM Mono',monospace", cursor: clickable ? 'pointer' : 'not-allowed', fontWeight: isActive ? 600 : 400, transition: 'background 0.15s ease, color 0.15s ease, border-color 0.15s ease', opacity: missing && !allowAll ? 0.35 : 1, whiteSpace: 'nowrap' }}
                 >

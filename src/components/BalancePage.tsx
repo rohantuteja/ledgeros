@@ -8,26 +8,38 @@ import type { BSChartRow, UploadStatus } from '@/lib/chartTypes'
 
 interface BalancePageProps {
   bsData: BSChartRow[]
-  selectedMonth: number | null
+  selectedMonths: number[]
   fy: string
   uploadStatus: UploadStatus
 }
 
-export default function BalancePage({ bsData, selectedMonth, fy, uploadStatus }: BalancePageProps) {
+export default function BalancePage({ bsData, selectedMonths, fy, uploadStatus }: BalancePageProps) {
   const [show, setShow] = useState(false)
 
-  if (selectedMonth !== null && !uploadStatus.bs.includes(selectedMonth)) {
+  const isFiltered = selectedMonths.length > 0
+  const lastMonth  = isFiltered ? selectedMonths[selectedMonths.length - 1] : null
+
+  if (isFiltered && !selectedMonths.some(m => uploadStatus.bs.includes(m))) {
+    const label = selectedMonths.length === 1
+      ? `${MONTHS[selectedMonths[0]]?.full ?? ''} · ${fy}`
+      : `${MONTHS[selectedMonths[0]]?.short ?? ''} → ${MONTHS[lastMonth!]?.short ?? ''} · ${fy}`
     return (
       <div className="fade-in">
-        <SectionHeader title="Balance Sheet" sub={`${MONTHS[selectedMonth]?.full ?? ''} · ${fy}`} />
-        <NoData month={`${MONTHS[selectedMonth]?.full ?? ''} ${fy} Balance Sheet`} />
+        <SectionHeader title="Balance Sheet" sub={label} />
+        <NoData month={`${label} Balance Sheet`} />
       </div>
     )
   }
 
-  const snap     = selectedMonth !== null ? bsData[selectedMonth] : bsData[bsData.length - 1]
-  const subLabel = selectedMonth !== null ? `As of ${MONTHS[selectedMonth]?.full ?? ''} end · ${fy}` : `As of Mar end · ${fy}`
-  const chartData = selectedMonth !== null ? bsData.slice(0, selectedMonth + 1) : bsData
+  const snap      = isFiltered
+    ? bsData[lastMonth!]
+    : [...bsData].reverse().find(d => d.totalAssets > 0) ?? bsData[bsData.length - 1]
+  const subLabel  = !isFiltered
+    ? `As of latest end · ${fy}`
+    : selectedMonths.length === 1
+      ? `As of ${MONTHS[selectedMonths[0]]?.full ?? ''} end · ${fy}`
+      : `As of ${MONTHS[lastMonth!]?.short ?? ''} end · ${fy}`
+  const chartData = isFiltered ? bsData.slice(0, lastMonth! + 1) : bsData
   const dte       = snap && snap.equity > 0 ? `${(snap.loans / snap.equity).toFixed(2)}x` : 'N/A'
 
   if (!snap) return null
@@ -35,7 +47,7 @@ export default function BalancePage({ bsData, selectedMonth, fy, uploadStatus }:
   return (
     <div className="fade-in">
       <SectionHeader title="Balance Sheet" sub={subLabel} />
-      <ContextBanner fy={fy} selectedMonth={selectedMonth} />
+      <ContextBanner fy={fy} selectedMonths={selectedMonths} />
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
         <KpiCard label="Total Assets"      value={fmt(snap.totalAssets)}      sub={subLabel} color={ACCENT}  />
@@ -45,7 +57,7 @@ export default function BalancePage({ bsData, selectedMonth, fy, uploadStatus }:
       </div>
 
       <Divider label="Assets" />
-      <ChartCard title="Asset Composition" height={200} hint={selectedMonth !== null ? `Apr → ${MONTHS[selectedMonth]?.short ?? ''}` : 'Full Year'}>
+      <ChartCard title="Asset Composition" height={200} hint={isFiltered ? `Apr → ${MONTHS[lastMonth!]?.short ?? ''}` : 'Full Year'}>
         <AreaChart data={chartData}>
           <defs>
             {([['gCash', ACCENT], ['gDeb', ACCENT2], ['gInv', ACCENT3]] as [string, string][]).map(([id, c]) => (

@@ -8,7 +8,7 @@ import type { LedgerLineItem, UploadStatus } from '@/lib/chartTypes'
 interface LedgerPageProps {
   plItems: LedgerLineItem[]
   bsItems: LedgerLineItem[]
-  selectedMonth: number | null
+  selectedMonths: number[]
   fy: string
   uploadStatus: UploadStatus
 }
@@ -73,20 +73,26 @@ function SectionTable({ items, color }: { items: LedgerLineItem[]; color: string
   )
 }
 
-export default function LedgerPage({ plItems, bsItems, selectedMonth, fy, uploadStatus }: LedgerPageProps) {
+export default function LedgerPage({ plItems, bsItems, selectedMonths, fy, uploadStatus }: LedgerPageProps) {
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({})
   const [tab, setTab] = useState<'pl' | 'bs'>('pl')
 
+  const isFiltered = selectedMonths.length > 0
+  const lastMonth  = isFiltered ? selectedMonths[selectedMonths.length - 1] : null
   const toggle = (id: string) => setOpenSections(p => ({ ...p, [id]: !p[id] }))
 
   const filterItems = (items: LedgerLineItem[]) =>
-    selectedMonth !== null ? items.filter(i => i.month_index === selectedMonth) : items
+    isFiltered ? items.filter(i => selectedMonths.includes(i.month_index)) : items
 
-  const subLabel = selectedMonth !== null ? `${MONTHS[selectedMonth]?.full ?? ''} · ${fy}` : `Full Year · ${fy}`
+  const subLabel = !isFiltered
+    ? `Full Year · ${fy}`
+    : selectedMonths.length === 1
+      ? `${MONTHS[selectedMonths[0]]?.full ?? ''} · ${fy}`
+      : `${MONTHS[selectedMonths[0]]?.short ?? ''} → ${MONTHS[lastMonth!]?.short ?? ''} · ${fy}`
 
   const hasData = tab === 'pl'
-    ? (selectedMonth !== null ? uploadStatus.pl.includes(selectedMonth) : uploadStatus.pl.length > 0)
-    : (selectedMonth !== null ? uploadStatus.bs.includes(selectedMonth) : uploadStatus.bs.length > 0)
+    ? (isFiltered ? selectedMonths.some(m => uploadStatus.pl.includes(m)) : uploadStatus.pl.length > 0)
+    : (isFiltered ? selectedMonths.some(m => uploadStatus.bs.includes(m)) : uploadStatus.bs.length > 0)
 
   const sections = tab === 'pl'
     ? buildPLSections(filterItems(plItems))
@@ -95,7 +101,7 @@ export default function LedgerPage({ plItems, bsItems, selectedMonth, fy, upload
   return (
     <div className="fade-in">
       <SectionHeader title="Ledger" sub={subLabel} />
-      <ContextBanner fy={fy} selectedMonth={selectedMonth} />
+      <ContextBanner fy={fy} selectedMonths={selectedMonths} />
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
         {(['pl', 'bs'] as const).map(t => (

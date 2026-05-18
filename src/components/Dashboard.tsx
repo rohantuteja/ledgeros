@@ -68,10 +68,10 @@ export default function Dashboard() {
   const width    = useWindowWidth()
   const isMobile = width < 768
 
-  const [active,        setActive]        = useState('overview')
-  const [drawerOpen,    setDrawerOpen]    = useState(false)
-  const [fy,            setFy]            = useState(FY_LIST[0])
-  const [selectedMonth, setSelectedMonth] = useState<number | null>(null)
+  const [active,          setActive]          = useState('overview')
+  const [drawerOpen,      setDrawerOpen]      = useState(false)
+  const [fy,              setFy]              = useState(FY_LIST[0])
+  const [selectedMonths,  setSelectedMonths]  = useState<number[]>([])
 
   const [rawPL,        setRawPL]        = useState<PLSummary[]>([])
   const [rawBS,        setRawBS]        = useState<BSSummary[]>([])
@@ -136,16 +136,16 @@ export default function Dashboard() {
 
   const handleFyChange = (newFy: string) => {
     setFy(newFy)
-    setSelectedMonth(null)
+    setSelectedMonths([])
   }
 
   const pages: Record<string, React.ReactNode> = {
-    overview: <Overview     isMobile={isMobile} plData={plData} bsData={bsData} selectedMonth={selectedMonth} fy={fy} expenseItems={expenseItems} bsItems={bsItems} />,
-    pl:       <PLPage       plData={plData} selectedMonth={selectedMonth} fy={fy} uploadStatus={uploadStatus} expenseItems={expenseItems} />,
-    balance:  <BalancePage  bsData={bsData} selectedMonth={selectedMonth} fy={fy} uploadStatus={uploadStatus} />,
-    cashflow: <CashFlowPage bsData={bsData} selectedMonth={selectedMonth} fy={fy} uploadStatus={uploadStatus} />,
-    ledger:   <LedgerPage   plItems={expenseItems} bsItems={bsItems} selectedMonth={selectedMonth} fy={fy} uploadStatus={uploadStatus} />,
-    upload:   <UploadPage   fy={fy} selectedMonth={selectedMonth} uploadStatus={uploadStatus} onDataRefresh={fetchData} />,
+    overview: <Overview     isMobile={isMobile} plData={plData} bsData={bsData} selectedMonths={selectedMonths} fy={fy} expenseItems={expenseItems} bsItems={bsItems} />,
+    pl:       <PLPage       plData={plData} selectedMonths={selectedMonths} fy={fy} uploadStatus={uploadStatus} expenseItems={expenseItems} />,
+    balance:  <BalancePage  bsData={bsData} selectedMonths={selectedMonths} fy={fy} uploadStatus={uploadStatus} />,
+    cashflow: <CashFlowPage bsData={bsData} selectedMonths={selectedMonths} fy={fy} uploadStatus={uploadStatus} />,
+    ledger:   <LedgerPage   plItems={expenseItems} bsItems={bsItems} selectedMonths={selectedMonths} fy={fy} uploadStatus={uploadStatus} />,
+    upload:   <UploadPage   fy={fy} selectedMonth={selectedMonths[0] ?? null} uploadStatus={uploadStatus} onDataRefresh={fetchData} />,
   }
 
   return (
@@ -194,7 +194,7 @@ export default function Dashboard() {
           <div style={{ padding: '0 20px', borderTop: '1px solid #1a1d2a', paddingTop: 20 }}>
             <div style={{ fontSize: 10, color: '#374151', fontFamily: "'DM Mono',monospace" }}>SELECTED PERIOD</div>
             <div style={{ fontSize: 11, color: '#4b5563', marginTop: 4 }}>
-              {selectedMonth !== null ? `${MONTHS[selectedMonth]?.full ?? ''} · ${fy}` : `All months · ${fy}`}
+              {selectedMonths.length === 0 ? `All months · ${fy}` : selectedMonths.length === 1 ? `${MONTHS[selectedMonths[0]]?.full ?? ''} · ${fy}` : `${selectedMonths.map(i => MONTHS[i]?.short).join(', ')} · ${fy}`}
             </div>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 8, fontSize: 10, color: ACCENT, fontFamily: "'DM Mono',monospace" }}>
               <span style={{ width: 6, height: 6, borderRadius: '50%', background: ACCENT, animation: 'pulse 2s infinite', display: 'inline-block' }} />LIVE
@@ -249,7 +249,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        <FilterBar fy={fy} setFy={handleFyChange} selectedMonth={selectedMonth} setSelectedMonth={setSelectedMonth} isMobile={isMobile} uploadStatus={uploadStatus} allowAll={active === 'upload'} />
+        <FilterBar fy={fy} setFy={handleFyChange} selectedMonths={selectedMonths} setSelectedMonths={setSelectedMonths} isMobile={isMobile} uploadStatus={uploadStatus} allowAll={active === 'upload'} />
 
         <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '18px 14px 88px' : '28px 36px' }}>
           {loading ? (

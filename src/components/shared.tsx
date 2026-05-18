@@ -85,20 +85,23 @@ export function NoData({ month }: { month: string }) {
   )
 }
 
-export function ContextBanner({ fy, selectedMonth }: { fy: string; selectedMonth: number | null }) {
-  if (selectedMonth === null) return null
-  const m = MONTHS[selectedMonth]
-  if (!m) return null
+export function ContextBanner({ fy, selectedMonths }: { fy: string; selectedMonths: number[] }) {
+  if (selectedMonths.length === 0) return null
+  const first = MONTHS[selectedMonths[0]]
+  const last  = MONTHS[selectedMonths[selectedMonths.length - 1]]
+  const label = selectedMonths.length === 1
+    ? `${first?.full ?? ''} · ${fy}`
+    : `${first?.short ?? ''} → ${last?.short ?? ''} · ${fy}`
   return (
     <div style={{ background: 'rgba(0,229,160,0.04)', border: '1px solid rgba(0,229,160,0.12)', borderRadius: 10, padding: '10px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <span style={{ color: ACCENT, fontSize: 14 }}>◎</span>
         <span style={{ fontSize: 12, color: '#9ca3af' }}>
-          Showing data for <span style={{ color: ACCENT, fontFamily: "'DM Mono',monospace", fontWeight: 600 }}>{m.full} · {fy}</span>
+          Showing data for <span style={{ color: ACCENT, fontFamily: "'DM Mono',monospace", fontWeight: 600 }}>{label}</span>
         </span>
       </div>
       <div style={{ fontSize: 11, color: '#4b5563', fontFamily: "'DM Mono',monospace" }}>
-        P&L = monthly slice &nbsp;·&nbsp; B/S = cumulative to {m.short} end
+        P&L = monthly slice &nbsp;·&nbsp; B/S = cumulative to {last?.short ?? ''} end
       </div>
     </div>
   )

@@ -9,7 +9,7 @@ interface OverviewPageProps {
   isMobile: boolean
   plData: PLChartRow[]
   bsData: BSChartRow[]
-  selectedMonth: number | null
+  selectedMonths: number[]
   fy: string
   expenseItems: ExpenseLineItem[]
   bsItems: LedgerLineItem[]
@@ -28,21 +28,27 @@ function categorise(name: string): string {
   return 'Others'
 }
 
-export default function Overview({ isMobile, plData, bsData, selectedMonth, fy, expenseItems, bsItems }: OverviewPageProps) {
-  const slice   = selectedMonth !== null ? [plData[selectedMonth]] : plData
-  const bsSnap  = selectedMonth !== null
-    ? bsData[selectedMonth]
+export default function Overview({ isMobile, plData, bsData, selectedMonths, fy, expenseItems, bsItems }: OverviewPageProps) {
+  const isFiltered = selectedMonths.length > 0
+  const lastMonth  = isFiltered ? selectedMonths[selectedMonths.length - 1] : null
+  const slice      = isFiltered ? plData.filter((_, i) => selectedMonths.includes(i)) : plData
+  const bsSnap     = isFiltered
+    ? bsData[lastMonth!]
     : [...bsData].reverse().find(d => d.totalAssets > 0) ?? bsData[bsData.length - 1]
 
   const totalRevenue = slice.reduce((s, d) => s + d.revenue, 0)
   const totalProfit  = slice.reduce((s, d) => s + d.netProfit, 0)
   const margin       = totalRevenue ? ((totalProfit / totalRevenue) * 100).toFixed(1) : '0.0'
-  const subLabel     = selectedMonth !== null ? (MONTHS[selectedMonth]?.full ?? '') : `Full Year · ${fy}`
+  const subLabel     = !isFiltered
+    ? `Full Year · ${fy}`
+    : selectedMonths.length === 1
+      ? `${MONTHS[selectedMonths[0]]?.full ?? ''} · ${fy}`
+      : `${MONTHS[selectedMonths[0]]?.short ?? ''} → ${MONTHS[lastMonth!]?.short ?? ''} · ${fy}`
 
   const EXPENSE_SECTIONS = ['trading_costs', 'direct_expenses', 'indirect_expenses']
   const STOCK_PURCHASE_NAMES = ['opening stock', 'add: purchase accounts', 'less: closing stock']
-  const relevantItems = (selectedMonth !== null
-    ? expenseItems.filter(e => e.month_index === selectedMonth)
+  const relevantItems = (isFiltered
+    ? expenseItems.filter(e => selectedMonths.includes(e.month_index))
     : expenseItems
   ).filter(e =>
     EXPENSE_SECTIONS.includes(e.section) &&
@@ -65,7 +71,7 @@ export default function Overview({ isMobile, plData, bsData, selectedMonth, fy, 
     }))
 
   const latestBsMonth = bsItems.length > 0 ? Math.max(...bsItems.map(i => i.month_index)) : null
-  const bsMonthForBalance = selectedMonth !== null ? selectedMonth : latestBsMonth
+  const bsMonthForBalance = isFiltered ? lastMonth : latestBsMonth
   const balanceItems = bsMonthForBalance !== null ? bsItems.filter(i => i.month_index === bsMonthForBalance) : []
   const totalBalance = balanceItems
     .filter(i => {
@@ -80,7 +86,7 @@ export default function Overview({ isMobile, plData, bsData, selectedMonth, fy, 
   return (
     <div className="fade-in">
       <SectionHeader title="Financial Overview" sub={subLabel} />
-      <ContextBanner fy={fy} selectedMonth={selectedMonth} />
+      <ContextBanner fy={fy} selectedMonths={selectedMonths} />
 
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4,1fr)', gap: 12, marginBottom: 16 }}>
         <KpiCard label="Revenue"             value={fmt(totalRevenue)}                        sub={subLabel}                          color={ACCENT}  tag="P&L" />
@@ -89,8 +95,8 @@ export default function Overview({ isMobile, plData, bsData, selectedMonth, fy, 
         <KpiCard label="Total Balance"       value={fmt(totalBalance)}                       sub={balanceMonth ? `As of ${balanceMonth} end` : '—'} color={ACCENT3} tag="B/S" />
       </div>
 
-      <ChartCard title="Revenue vs Net Profit" height={200} hint={selectedMonth !== null ? 'Single month' : 'Monthly trend'}>
-        <AreaChart data={selectedMonth !== null ? [plData[selectedMonth]] : plData}>
+      <ChartCard title="Revenue vs Net Profit" height={200} hint={isFiltered ? (selectedMonths.length === 1 ? 'Single month' : 'Selected months') : 'Monthly trend'}>
+        <AreaChart data={slice}>
           <defs>
             <linearGradient id="gRev" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%"  stopColor={ACCENT}  stopOpacity={0.15} />
