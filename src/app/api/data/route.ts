@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 
+// "FY 25-26" → "FY 24-25"
+function getPrevFy(fy: string): string {
+  const m = fy.match(/^FY (\d{2})-(\d{2})$/)
+  if (!m) return ''
+  const s = parseInt(m[1]) - 1
+  const e = parseInt(m[2]) - 1
+  return `FY ${s < 10 ? '0' + s : s}-${e < 10 ? '0' + e : e}`
+}
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
@@ -13,7 +22,17 @@ export async function GET(req: NextRequest) {
       )
     }
 
-    const [uploadsResult, plResult, bsResult, expenseItemsResult, bsItemsResult] = await Promise.all([
+    const prevFy = getPrevFy(fy)
+
+    const [
+      uploadsResult,
+      plResult,
+      bsResult,
+      expenseItemsResult,
+      bsItemsResult,
+      prevMarchBsResult,
+      prevMarchBsItemsResult,
+    ] = await Promise.all([
       supabaseAdmin
         .from('uploads')
         .select('month_index, file_type')
@@ -36,6 +55,22 @@ export async function GET(req: NextRequest) {
         .from('bs_line_items')
         .select('month_index, ledger_name, amount, section')
         .eq('financial_year', fy),
+      // Previous FY's March (month_index=11) for cash flow opening balance
+      prevFy
+        ? supabaseAdmin
+            .from('bs_summary')
+            .select('*')
+            .eq('financial_year', prevFy)
+            .eq('month_index', 11)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
+      prevFy
+        ? supabaseAdmin
+            .from('bs_line_items')
+            .select('ledger_name, amount, section')
+            .eq('financial_year', prevFy)
+            .eq('month_index', 11)
+        : Promise.resolve({ data: [], error: null }),
     ])
 
     if (uploadsResult.error) throw new Error(`Uploads fetch failed: ${uploadsResult.error.message}`)
@@ -56,6 +91,8 @@ export async function GET(req: NextRequest) {
       bsData: bsResult.data ?? [],
       expenseItems: expenseItemsResult.data ?? [],
       bsItems: bsItemsResult.data ?? [],
+      prevMarchBsRow: prevMarchBsResult.data ?? null,
+      prevMarchBsItems: prevMarchBsItemsResult.data ?? [],
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error'

@@ -116,11 +116,13 @@ export default function Dashboard() {
     return () => window.removeEventListener('popstate', onPop)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const [rawPL,        setRawPL]        = useState<PLSummary[]>([])
-  const [rawBS,        setRawBS]        = useState<BSSummary[]>([])
-  const [expenseItems, setExpenseItems] = useState<ExpenseLineItem[]>([])
-  const [bsItems,      setBsItems]      = useState<LedgerLineItem[]>([])
-  const [uploadStatus, setUploadStatus] = useState<UploadStatus>({ pl: [], bs: [] })
+  const [rawPL,            setRawPL]            = useState<PLSummary[]>([])
+  const [rawBS,            setRawBS]            = useState<BSSummary[]>([])
+  const [expenseItems,     setExpenseItems]     = useState<ExpenseLineItem[]>([])
+  const [bsItems,          setBsItems]          = useState<LedgerLineItem[]>([])
+  const [uploadStatus,     setUploadStatus]     = useState<UploadStatus>({ pl: [], bs: [] })
+  const [prevMarchBsRow,   setPrevMarchBsRow]   = useState<BSSummary | null>(null)
+  const [prevMarchBsItems, setPrevMarchBsItems] = useState<LedgerLineItem[]>([])
   const [loading,  setLoading]  = useState(true)
   const [error,    setError]    = useState<string | null>(null)
 
@@ -136,6 +138,8 @@ export default function Dashboard() {
       setRawBS(json.bsData ?? [])
       setExpenseItems(json.expenseItems ?? [])
       setBsItems(json.bsItems ?? [])
+      setPrevMarchBsRow(json.prevMarchBsRow ?? null)
+      setPrevMarchBsItems(json.prevMarchBsItems ?? [])
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to fetch data')
     } finally {
@@ -189,6 +193,15 @@ export default function Dashboard() {
       }
     }), [rawBS, bsItems])
 
+  // Previous FY's March closing cash — used as April's opening balance in Cash Flow
+  const prevMarchCash = useMemo<number | null>(() => {
+    if (!prevMarchBsRow && prevMarchBsItems.length === 0) return null
+    const cashFromItems = prevMarchBsItems
+      .filter(i => { const n = i.ledger_name.toLowerCase(); return n.includes('bank') || n.includes('cash') || n.includes('fdr') })
+      .reduce((s, i) => s + i.amount, 0)
+    return cashFromItems || (prevMarchBsRow?.cash_and_bank ?? 0)
+  }, [prevMarchBsRow, prevMarchBsItems])
+
   const buildUrl = (tab: string, fyVal: string, months: number[]) => {
     const p = new URLSearchParams({ tab, fy: fyVal })
     if (months.length > 0) p.set('months', months.join(','))
@@ -215,7 +228,7 @@ export default function Dashboard() {
     overview: <Overview     isMobile={isMobile} plData={plData} bsData={bsData} selectedMonths={selectedMonths} fy={fy} expenseItems={expenseItems} bsItems={bsItems} />,
     pl:       <PLPage       plData={plData} selectedMonths={selectedMonths} fy={fy} uploadStatus={uploadStatus} expenseItems={expenseItems} />,
     balance:  <BalancePage  bsData={bsData} selectedMonths={selectedMonths} fy={fy} uploadStatus={uploadStatus} />,
-    cashflow: <CashFlowPage bsData={bsData} selectedMonths={selectedMonths} fy={fy} uploadStatus={uploadStatus} />,
+    cashflow: <CashFlowPage bsData={bsData} selectedMonths={selectedMonths} fy={fy} uploadStatus={uploadStatus} prevMarchCash={prevMarchCash} />,
     ledger:   <LedgerPage   plItems={expenseItems} bsItems={bsItems} selectedMonths={selectedMonths} fy={fy} uploadStatus={uploadStatus} />,
     upload:   <UploadPage   fy={fy} selectedMonth={selectedMonths[0] ?? null} uploadStatus={uploadStatus} onDataRefresh={fetchData} fyList={fyList} onFyListChange={() => fetchFyList(fy)} />,
   }

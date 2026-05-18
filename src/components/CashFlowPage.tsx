@@ -10,9 +10,10 @@ interface CashFlowPageProps {
   selectedMonths: number[]
   fy: string
   uploadStatus: UploadStatus
+  prevMarchCash: number | null
 }
 
-export default function CashFlowPage({ bsData, selectedMonths, fy, uploadStatus }: CashFlowPageProps) {
+export default function CashFlowPage({ bsData, selectedMonths, fy, uploadStatus, prevMarchCash }: CashFlowPageProps) {
   const isFiltered = selectedMonths.length > 0
   const lastMonth  = isFiltered ? selectedMonths[selectedMonths.length - 1] : null
   const bsWithData = bsData.filter((_, i) => uploadStatus.bs.includes(i))
@@ -31,7 +32,9 @@ export default function CashFlowPage({ bsData, selectedMonths, fy, uploadStatus 
   }
 
   const cfData = bsWithData.map((d, i) => {
-    const prev = i === 0 ? d.cash : bsWithData[i - 1].cash
+    const prev = i === 0
+      ? (prevMarchCash !== null ? prevMarchCash : d.cash)
+      : bsWithData[i - 1].cash
     return {
       month:     d.month,
       opening:   prev,
@@ -61,7 +64,7 @@ export default function CashFlowPage({ bsData, selectedMonths, fy, uploadStatus 
       <ContextBanner fy={fy} selectedMonths={selectedMonths} />
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
-        <KpiCard label="Opening Cash" value={fmt(cfData[0].opening)} sub="Start of period"       color={ACCENT}  />
+        <KpiCard label="Opening Cash" value={fmt(cfData[0].opening)} sub={prevMarchCash !== null ? 'Mar closing · prev FY' : 'Start of period'} color={ACCENT}  />
         <KpiCard label="Closing Cash" value={fmt(snap.closing)}      sub={`End of ${snap.month}`} color={ACCENT2} />
         <KpiCard label="Net Change"   value={fmt(totalNet)}          sub={subLabel}               color={totalNet >= 0 ? ACCENT3 : RED} />
         <KpiCard label="Best Month"   value={bestMonth?.month ?? '—'} sub="Highest cash gain"   color={PURPLE}  />
