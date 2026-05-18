@@ -48,7 +48,7 @@ export default function PLPage({ plData, selectedMonth, fy, uploadStatus, expens
   const relevantItems   = selectedMonth !== null
     ? expenseItems.filter(e => e.month_index === selectedMonth)
     : expenseItems
-  const { openingStock, purchases, closingStock, cogs: cogsTotal, directExp: directExpTotal } = cogsAndDirectExp(relevantItems)
+  const { openingStock, purchases, closingStock, cogs: cogsTotal } = cogsAndDirectExp(relevantItems)
 
   // Per-month breakdown for chart
   const chartData = slice.map(row => {
