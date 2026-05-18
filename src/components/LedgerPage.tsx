@@ -35,9 +35,12 @@ function buildPLSections(items: LedgerLineItem[]): Section[] {
   const get = (section: string, filter?: (i: LedgerLineItem) => boolean) =>
     items.filter(i => i.section === section && (!filter || filter(i)))
 
+  const cogsItems = get('trading_costs', i => COGS_NAMES.includes(i.ledger_name.toLowerCase()))
+    .map(i => i.ledger_name.toLowerCase().includes('closing stock') ? { ...i, amount: -i.amount } : i)
+
   return [
     { id: 'trading_sales',     label: 'Trading Sales',      color: ACCENT,     items: get('trading_sales') },
-    { id: 'cogs',              label: 'Cost of Goods Sold', color: RED,        items: get('trading_costs', i => COGS_NAMES.includes(i.ledger_name.toLowerCase())) },
+    { id: 'cogs',              label: 'Cost of Goods Sold', color: RED,        items: cogsItems },
     { id: 'direct_expenses',   label: 'Direct Expenses',    color: ACCENT3,    items: [...get('trading_costs', i => !COGS_NAMES.includes(i.ledger_name.toLowerCase())), ...get('direct_expenses')] },
     { id: 'indirect_income',   label: 'Indirect Income',    color: ACCENT2,    items: get('indirect_income') },
     { id: 'indirect_expenses', label: 'Indirect Expenses',  color: '#f97316',  items: get('indirect_expenses') },
