@@ -170,7 +170,12 @@ export default function Dashboard() {
       const debtors     = row?.debtors                ?? 0
       const inventory   = row?.inventory              ?? 0
       const fixedAssets = row?.fixed_assets           ?? 0
-      const investments = row?.investments            ?? 0
+      // FDR is already counted inside cash (via cashFromItems); subtract it from
+      // investments to avoid double-counting in totalAssets when bsItems are present
+      const fdrFromItems = monthBsItems
+        .filter(i => i.ledger_name.toLowerCase().includes('fdr'))
+        .reduce((s, i) => s + i.amount, 0)
+      const investments = (row?.investments ?? 0) - (monthBsItems.length > 0 ? fdrFromItems : 0)
       const otherCA     = row?.other_current_assets   ?? 0
       const creditors   = row?.creditors              ?? 0
       const otherCL     = row?.other_current_liabilities ?? 0
