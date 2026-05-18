@@ -4,7 +4,7 @@ export const ACCENT3 = '#f59e0b'
 export const RED     = '#f87171'
 export const PURPLE  = '#a78bfa'
 
-export const FY_LIST = ['FY 25-26', 'FY 24-25', 'FY 23-24']
+export const FY_LIST = ['FY 26-27', 'FY 25-26', 'FY 24-25', 'FY 23-24']
 
 export interface MonthEntry { short: string; full: string; idx: number }
 
